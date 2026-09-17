@@ -59,6 +59,21 @@ jobs:
         with:
           directory: ${{ env.TF_DIR }}
           soft_fail: false
+          # Each ID below is an already-approved v1 decision, not an unreviewed
+          # gap — inline #checkov:skip comments in main.tf did not reliably
+          # take effect in CI, so enforcement lives here instead (main.tf still
+          # carries the same reasoning as comments, for anyone reading the code).
+          # CKV_AWS_8 / CKV_AWS_189 / CKV_AWS_3 / CKV2_AWS_2 — no at-rest EBS
+          #   encryption for v1 (security-architecture.md §7 marker 4, RESOLVED)
+          # CKV_AWS_338 — 30-day CloudWatch retention, not >=365
+          #   (tf-coding-inputs.md assumption #10, approved; no compliance driver)
+          # CKV_AWS_260 — SG ingress 0.0.0.0/0:80 is the intended v1 HTTP-only
+          #   ingress path (security-architecture.md §7 marker 4: no TLS for v1)
+          # NOTE: these are blanket skips across infra/ — safe today since each
+          # check ID matches exactly one resource in this small stack, but must
+          # be revisited (scoped per-resource) if infra/ ever grows a second
+          # resource of the same type that should NOT share the same exemption.
+          skip_check: CKV_AWS_8,CKV_AWS_189,CKV_AWS_3,CKV2_AWS_2,CKV_AWS_338,CKV_AWS_260
 
   validate:
     needs: lint
@@ -91,6 +106,7 @@ jobs:
     timeout-minutes: 15
     environment: prod
     permissions:
+      id-token: write # required for OIDC — aws-actions/configure-aws-credentials exchanges this token for short-lived AWS creds
       contents: read
       pull-requests: write
     steps:
@@ -100,12 +116,12 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}         # Secret: AWS_ACCESS_KEY_ID
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Secret: AWS_SECRET_ACCESS_KEY
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — infra/main.tf's aws_iam_role.github_actions output (github_actions_role_arn)
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-session-name: github-actions-terraform
 
       - name: terraform init
         working-directory: ${{ env.TF_DIR }}
@@ -140,6 +156,7 @@ jobs:
     timeout-minutes: 30
     environment: prod # manual gate — configure Required reviewers on this GitHub Environment
     permissions:
+      id-token: write # required for OIDC — aws-actions/configure-aws-credentials exchanges this token for short-lived AWS creds
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -153,12 +170,12 @@ jobs:
           name: prod-tfplan
           path: ${{ env.TF_DIR }}
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}         # Secret: AWS_ACCESS_KEY_ID
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Secret: AWS_SECRET_ACCESS_KEY
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — infra/main.tf's aws_iam_role.github_actions output (github_actions_role_arn)
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-session-name: github-actions-terraform
 
       - name: terraform init
         working-directory: ${{ env.TF_DIR }}

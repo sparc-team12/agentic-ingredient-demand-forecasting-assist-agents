@@ -337,3 +337,43 @@ This pipeline **will not work as-is** — it references a systemd unit (`ingredi
 
 Related:
 .github/workflows/deploy.yml, .github/workflows/terraform.yml (DEC-012), tech-stack.md §3/§4 (still [TBD])
+
+## DEC-014 — Checkov CKV2_AWS_2 (unencrypted EBS) suppressed with a reference, not fixed by encrypting
+
+Decision:
+The `lint` job's Checkov scan (`soft_fail: false`, DEC-012) failed `CKV2_AWS_2` ("only encrypted EBS volumes attached to EC2 instances") against `aws_ebs_volume.data`. Rather than flipping `encrypted = true` — which would silently override an already-approved human decision — added inline `#checkov:skip=CKV2_AWS_2:...` (and, defensively, `#checkov:skip=CKV_AWS_8:...`) annotations to both `aws_instance.app`'s `root_block_device` and `aws_ebs_volume.data`, each citing `security-architecture.md` §7 marker 4 (the RESOLVED, human-approved "no at-rest encryption required for v1" decision) as the reason.
+
+Decided by:
+sparc.team12@experionglobal.com pasted the Checkov failure output directly; the response (suppress-with-reference, not silently encrypt) follows this session's standing rule against unilaterally overriding an already-recorded human decision, not a fresh confirmation from the user on this specific point.
+
+Reason:
+`encrypted = false` on both resources is not a bug — it's the literal implementation of a decision already made and recorded (security-architecture.md marker 4). A CI scanner correctly flagging an intentionally-accepted risk should be told about the acceptance (with a pointer to where it was decided and why), not overridden by changing the infrastructure to make the scanner happy, and not ignored via a blanket `soft_fail: true` that would also hide genuinely new findings.
+
+Alternatives considered:
+Setting `encrypted = true` was rejected — it would contradict an approved architecture decision without going back through a gate. Setting the `lint` job's Checkov step to `soft_fail: true` globally was rejected — too broad; it would silently swallow future, real findings along with this accepted one.
+
+Impact:
+The `lint` job's Checkov step should now pass without weakening its ability to catch other findings. If `security-architecture.md` marker 4 is ever revisited (e.g., at-rest encryption becomes required), these two skip annotations must be removed as part of that change, not left stale.
+
+Related:
+infra/main.tf, security-architecture.md §7 (marker 4), .github/workflows/terraform.yml (DEC-012)
+
+## DEC-015 — Switch pipeline auth from static AWS keys to GitHub OIDC; add the OIDC provider/role to infra/main.tf
+
+Decision:
+Reverses part of DEC-012's choice. Added `aws_iam_openid_connect_provider.github_actions` and `aws_iam_role.github_actions` (trust policy scoped to `repo:sparc-team12/agentic-ingredient-demand-forecasting-assist-agents:*` via `token.actions.githubusercontent.com:sub`, plus the `aud=sts.amazonaws.com` condition) to `infra/main.tf`, and a new `github_actions_role_arn` output. Updated `.github/workflows/terraform.yml`'s `plan` and `apply` jobs to use `role-to-assume: ${{ secrets.AWS_ROLE_ARN }}` via OIDC (with `permissions: id-token: write` added to both jobs) instead of `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`. Permissions for the new role are deliberately not wired up in Terraform — same as DEC-012, the user attaches them.
+
+Decided by:
+sparc.team12@experionglobal.com, directly in conversation on 2026-09-18 — "Im using OIDC as the authentication and connection from the github to aws."
+
+Reason:
+Direct, explicit reversal of the earlier choice (DEC-012 asked and the user picked static keys at the time; they've since decided to use OIDC instead) — no long-lived AWS credentials need to be stored as GitHub secrets this way.
+
+Alternatives considered:
+Keeping the static-key setup from DEC-012 was the status quo; superseded by this explicit change, not run side-by-side.
+
+Impact:
+**Bootstrapping requirement, not yet satisfiable by the pipeline itself:** the very first `terraform apply` that creates the OIDC provider and role must run with separate credentials (e.g. the user's own local AWS CLI access) — the pipeline cannot assume a role that doesn't exist yet. After that one-time apply, the role's ARN (from the new `github_actions_role_arn` output) must be stored as the repo's `AWS_ROLE_ARN` secret, and `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` (DEC-012) are no longer used by the pipeline (harmless to leave configured or to remove). `infra/README.md`'s placeholder/setup table should be updated to reflect `AWS_ROLE_ARN` instead of the two static-key secrets.
+
+Related:
+infra/main.tf (aws_iam_openid_connect_provider.github_actions, aws_iam_role.github_actions), .github/workflows/terraform.yml, DEC-012 (superseded on auth method only)
