@@ -11,7 +11,7 @@ tools: Read, Grep, Glob, Write
 Two supported input shapes — use whichever actually exists for this product; do not require both:
 
 **Shape A — discovery-pipeline artifacts:**
-- `artifacts/research/requirements-baseline.md`
+- `artifacts/prd/prd-<slug>.md` — the Gate-1-approved PRD (source of `REQ-` ids)
 - `artifacts/features/feature-specification.md`
 - `artifacts/stories/user-stories.md` (if available; proceed without it and note the gap if not yet produced)
 

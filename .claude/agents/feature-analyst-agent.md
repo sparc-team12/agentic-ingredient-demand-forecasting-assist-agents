@@ -7,7 +7,8 @@ tools: Read, Grep, Glob, Write
 # Feature Analyst Agent
 
 ## Input contract
-- `artifacts/research/requirements-baseline.md` (must be human-approved — if the orchestrator has not confirmed Gate 1 approval, say so and stop rather than proceeding).
+- `artifacts/prd/prd-<slug>.md` — the PRD `prd-agent` produced, human-`Confirmed` and approved at Gate 1 (must be human-approved — if the orchestrator has not confirmed Gate 1 approval, say so and stop rather than proceeding). This is the authoritative source of `REQ-` ids; trace every feature back to a `REQ-` here.
+- Optional: `artifacts/research/requirements-baseline.md` for supporting research context/rationale not fully carried into the PRD.
 - Optional: `workflow/decisions.md` for context on prior human decisions affecting scope.
 
 ## Responsibilities

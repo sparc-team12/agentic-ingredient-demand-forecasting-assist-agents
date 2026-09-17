@@ -7,4 +7,4 @@ Load and follow `.claude/skills/product-discovery/SKILL.md`, mode **SINGLE_AGENT
 
 Workflow ID given: `$ARGUMENTS`
 
-Read `workflow/status.json`. If `feature_analyst` is not `COMPLETED`, stop and explain what's missing. Otherwise dispatch `user-story-analyst-agent` (`.claude/agents/user-story-analyst-agent.md`) using `artifacts/research/requirements-baseline.md` and `artifacts/features/feature-specification.md`, and report the result.
+Read `workflow/status.json`. If `feature_analyst` is not `COMPLETED`, stop and explain what's missing. Otherwise dispatch `user-story-analyst-agent` (`.claude/agents/user-story-analyst-agent.md`) using `artifacts/prd/prd-<slug>.md` and `artifacts/features/feature-specification.md`, and report the result.

@@ -10,13 +10,15 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 ## Input
 
 - A workflow ID — read `workflow/status.json` for that workflow and load whichever of the following artifacts currently exist (do not fail if some are missing; report the gap instead, since `/review` can legitimately be run mid-workflow):
-  - `artifacts/research/requirements-baseline.md`
+  - `artifacts/prd/prd-<slug>.md` (the Gate-1-approved PRD — source of `REQ-` ids)
+  - `artifacts/research/requirements-baseline.md` (supporting research context)
   - `artifacts/features/feature-specification.md`
   - `artifacts/stories/user-stories.md`
   - `artifacts/architecture/solution-architecture.md`
   - `artifacts/design/ui-ux-specification.md`
   - `artifacts/estimation/estimation-cost-analysis.md`
   - `artifacts/risk/risk-register.md`
+  - `artifacts/test-strategy/test-strategy.md`
   - `artifacts/architecture/solution-architecture-overview.md` (narrative Confluence-page draft from `solution-architecture-overview-agent`)
   - `artifacts/architecture/security-architecture.md` (from `solution-security-architecture-agent`)
   - `artifacts/architecture/tech-stack.md` (from `solution-tech-stack-agent`)
@@ -31,12 +33,14 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - UI/UX vs. user journeys — every `UI-XXX` traces to a real story/feature; no story implying a screen that has no `UI-XXX`.
 - Estimate vs. architecture — every `EST-XXX` traces to a real `FEAT-XXX`/`ARCH-XXX`; no architecture component left unestimated.
 - Risks vs. architecture/features — spot-check that high-impact architecture assumptions and integration points have a corresponding `RISK-XXX`.
+- Risk vs. test strategy — every `RISK-XXX` rated Critical or High has at least one `TS-XXX` mapping it to a required test depth; flag any that don't.
 
 ### Completeness
-- Missing requirements — anything features/stories imply that isn't in the requirements baseline.
+- Missing requirements — anything features/stories imply that isn't a `REQ-` in the PRD (or, failing that, the requirements baseline).
 - Missing acceptance criteria — any `US-XXX` without testable acceptance criteria.
 - Missing error/empty/loading states — any `UI-XXX` flow without them noted.
 - Missing non-functional requirements — features with no NFR coverage at all.
+- Missing test coverage — any NFR `REQ-XXX` or Critical/High `RISK-XXX` with no corresponding `TS-XXX`; any `FEAT-XXX`/`US-XXX` the test strategy's coverage approach never mentions.
 - Missing dependencies — features/stories/architecture items with no dependency section filled in when one plausibly exists.
 - Missing assumptions — architecture/estimation/risk items that read as certain but rest on an unstated assumption.
 

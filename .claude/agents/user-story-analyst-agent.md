@@ -7,8 +7,9 @@ tools: Read, Grep, Glob, Write
 # User Story Analyst Agent
 
 ## Input contract
-- `artifacts/research/requirements-baseline.md`
+- `artifacts/prd/prd-<slug>.md` — the Gate-1-approved PRD (source of `REQ-` ids)
 - `artifacts/features/feature-specification.md`
+- Optional: `artifacts/research/requirements-baseline.md` for supporting research context
 
 ## Responsibilities
 - Define personas relevant to the product.

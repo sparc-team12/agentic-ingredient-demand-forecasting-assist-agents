@@ -1,5 +1,5 @@
 ---
-description: Publish the approved final PRD to Confluence via the Atlassian MCP integration (Gate 5)
+description: Publish the approved final PRD (and test strategy, if approved alongside it) to Confluence via the Atlassian MCP integration (Gate 5)
 argument-hint: "<workflow-id>"
 ---
 

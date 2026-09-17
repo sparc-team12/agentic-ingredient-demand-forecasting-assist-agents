@@ -35,21 +35,25 @@ Read `confluence.site`, `confluence.space`, `confluence.parent_page` from `confi
 
 ## Step 3 — Search before creating
 
-For each page in `PageSet` (the ten PRD section pages below if none was passed), search under the target space/parent page first (`searchConfluenceUsingCql`, or list children of the parent via `getPagesInConfluenceSpace` / `getConfluencePageDescendants`) to determine whether a same-titled page already exists:
+The whole package nests under a `PRD` child page directly beneath the configured `parent_page` — find or create that `PRD` page first (same search-before-create rule applies to it), then search for each of the ten section pages below underneath it (`searchConfluenceUsingCql`, or list children via `getPagesInConfluenceSpace` / `getConfluencePageDescendants`) to determine whether a same-titled page already exists:
 
 ```
-<Project Name> PRD — WF-<id>
-├── Executive Summary
-├── Requirements
-├── Feature Specification
-├── User Stories
-├── Solution Architecture
-├── UI/UX Specification
-├── Estimation & Cost
-├── Risk Register
-├── Traceability Matrix
-└── Decision Log
+PRD
+├── <Project Name> PRD — WF-<id>
+│   ├── Executive Summary
+│   ├── Requirements
+│   ├── Feature Specification
+│   ├── User Stories
+│   ├── Solution Architecture
+│   ├── UI/UX Specification
+│   ├── Estimation & Cost
+│   ├── Risk Register
+│   ├── Traceability Matrix
+│   └── Decision Log
+└── <Project Name> Test Strategy — WF-<id>   (only if the caller says the test strategy was approved alongside the PRD)
 ```
+
+The test strategy is a single sibling page (it's one document, not ten sections) — same search-before-create/CREATE-vs-UPDATE treatment as every other page here, just don't invent it if the caller didn't say Gate 4 covered it.
 
 Page naming convention: prefix every page title with the workflow ID (e.g. `WF-2026-001 — Requirements`) unless the human specifies a different convention at Gate 5 — confirm the convention rather than assuming.
 
