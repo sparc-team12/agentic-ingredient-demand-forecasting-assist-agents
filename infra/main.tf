@@ -351,15 +351,16 @@ resource "aws_route_table_association" "public" {
 # =============================================================================
 # Security group
 # Inbound HTTP only (no TLS in v1, security-architecture.md §7). Outbound is
-# open — the app now calls the Gemini API over the internet (DEC-009/DEC-010),
-# so egress can't be locked down to VPC-only the way the old self-hosted-LLM
-# design was. [TBD — security-architecture.md marker 9: consider scoping
-# egress to Gemini's actual endpoint(s) once that review clears.]
+# scoped to HTTPS only (CKV_AWS_382 — resolves security-architecture.md §8's
+# open egress-scoping question, marker 9): the Gemini API is HTTPS-only, and
+# it's the only outbound dependency this app has (DEC-009/DEC-010). If OS
+# package installs during boot need plain HTTP (port 80) too, add a second
+# egress rule for it — most current apt/yum mirrors are HTTPS-only already.
 # =============================================================================
 
 resource "aws_security_group" "app" {
   name        = "${var.app_name}-sg"
-  description = "Application instance — inbound HTTP from the internet; outbound open for Gemini API calls"
+  description = "Application instance — inbound HTTP from the internet; outbound HTTPS only (Gemini API)"
   vpc_id      = aws_vpc.this.id
 
   ingress {
@@ -371,10 +372,10 @@ resource "aws_security_group" "app" {
   }
 
   egress {
-    description = "All outbound (includes Gemini API calls)"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "HTTPS (Gemini API)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 

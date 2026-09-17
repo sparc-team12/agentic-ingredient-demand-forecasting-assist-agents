@@ -397,3 +397,23 @@ New resources requiring additional IAM permissions beyond what `infra/iam-policy
 
 Related:
 infra/main.tf (aws_kms_key.logs, aws_cloudwatch_log_group.vpc_flow_logs, aws_iam_role.vpc_flow_logs, aws_flow_log.vpc), DEC-014
+
+## DEC-017 — Scope security-group egress to HTTPS (443) only, resolving the CKV_AWS_382 finding and security-architecture.md's egress-scoping TBD
+
+Decision:
+`aws_security_group.app`'s egress rule changed from all ports/protocols (`0.0.0.0/0`, protocol `-1`) to HTTPS only (`443/tcp`, `0.0.0.0/0`). Resolves Checkov `CKV_AWS_382` and the specific "should egress be scoped" question `security-architecture.md` §8 left open after DEC-010 (distinct from — and does not resolve — the broader marker 9 data-confidentiality question of whether sending data to Gemini at all is acceptable).
+
+Decided by:
+sparc.team12@experionglobal.com pasted the `CKV_AWS_382` failure; this was the previously-identified "recommended" option (scope to 443) from an earlier (rejected) multi-choice question, applied directly since the user has consistently asked for fixes over discussion in this session.
+
+Reason:
+Gemini API is HTTPS-only and is the only outbound dependency the application has — 443 covers the real need with no functional loss, and is a strict narrowing of what egress was previously open.
+
+Alternatives considered:
+Leaving egress fully open and suppressing `CKV_AWS_382` with a reference (the same treatment as DEC-014's already-approved items) was the other option surfaced earlier; not chosen — this wasn't an already-approved decision the way encryption was, so tightening it for real was preferred over documenting an acceptance of unnecessary exposure.
+
+Impact:
+If OS package installs during instance bootstrap need plain HTTP (port 80) egress (some older apt/yum mirrors aren't HTTPS-only), that would need a second egress rule added — not currently present. `security-architecture.md` §8 updated to mark this resolved; marker 9 remains open and unrelated to this specific fix.
+
+Related:
+infra/main.tf (aws_security_group.app), security-architecture.md §8 (marker 9 still open), DEC-010
