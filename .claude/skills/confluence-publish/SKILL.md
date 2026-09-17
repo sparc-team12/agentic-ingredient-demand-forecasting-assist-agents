@@ -11,7 +11,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §13–14. This sk
 
 | Parameter | Required | Description |
 |---|---|---|
-| `PageSet` | No | The set of pages to publish, as `{title, body}` pairs. Defaults to the ten PRD section pages below if omitted, for backward compatibility with the PRD flow. A caller publishing a different document set (e.g. `solution-architecture-suite-orchestrator-agent`'s three architecture pages) passes its own `PageSet` instead — the search-before-create, CREATE-vs-UPDATE, and Gate 5 confirmation steps below apply identically regardless of which set is passed. |
+| `PageSet` | No | The set of pages to publish, as `{title, body}` pairs. Defaults to the ten PRD section pages below if omitted, for backward compatibility with the PRD flow. A caller publishing a different document set (e.g. `solution-architecture-suite-orchestrator-agent`'s five architecture/HLD/LLD pages) passes its own `PageSet` instead — the search-before-create, CREATE-vs-UPDATE, and Gate 5 confirmation steps below apply identically regardless of which set is passed. |
 | `ParentPage` | No | Overrides `confluence.parent_page` from `config/project.yaml` for this call, if the caller's document set lives under a different parent (e.g. an "Architecture" page tree instead of the PRD tree). |
 
 ## Precondition (caller's responsibility, verify before invoking)

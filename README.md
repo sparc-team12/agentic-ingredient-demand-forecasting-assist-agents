@@ -1,6 +1,6 @@
 # agentic-ingredient-demand-forecasting-assist-agents
 
-A human-in-the-loop product discovery, planning, and development-agent system built on Claude Code. The discovery orchestrator produces approved requirements, architecture, and test strategy; the separate development orchestrator can then implement one approved work item through independent verification and a structured QA handoff. It never treats development completion as QA approval and does not autonomously release or deploy.
+A human-in-the-loop product discovery, architecture, and development-agent system built on Claude Code. The architecture suite converts approved solution architecture into reviewed HLD and implementation-ready LLD; only then may the development orchestrator implement a work item through independent verification and a structured QA handoff. It never treats development completion as QA approval and does not autonomously release or deploy.
 
 ## 1. What this system does
 
@@ -89,6 +89,9 @@ Specialist agents are direct children of the orchestrator — there is no recurs
 | Feature Analyst | `.claude/agents/feature-analyst-agent.md` | `artifacts/features/feature-specification.md` (`FEAT-XXX`) |
 | User Story Analyst | `.claude/agents/user-story-analyst-agent.md` | `artifacts/stories/user-stories.md` (`US-XXX`) |
 | Solution Architect | `.claude/agents/solution-architect-agent.md` | `artifacts/architecture/solution-architecture.md` (`ARCH-XXX`) |
+| HLD Architect | `.claude/agents/solution-hld-agent.md` | `artifacts/architecture/high-level-design.md` (`HLD-XXX`) |
+| LLD Architect | `.claude/agents/solution-lld-agent.md` | `artifacts/architecture/low-level-design.md` (`LLD-XXX`) |
+| Architecture Validator | `.claude/agents/solution-architecture-validator-agent.md` | `artifacts/architecture/architecture-validation.json` and development-readiness gate |
 | UI/UX Designer | `.claude/agents/uiux-designer-agent.md` | `artifacts/design/ui-ux-specification.md` (`UI-XXX`) |
 | Estimation & Cost | `.claude/agents/estimation-cost-agent.md` | `artifacts/estimation/estimation-cost-analysis.md` (`EST-XXX`) |
 | Risk & Compliance | `.claude/agents/risk-compliance-agent.md` | `artifacts/risk/risk-register.md` (`RISK-XXX`) |
@@ -162,6 +165,7 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 /features <workflow-id>                     feature analyst only
 /stories <workflow-id>                      user story analyst only
 /architecture <workflow-id>                 solution architect only
+/generate-architecture [id] --repo <path>   full architecture suite, HLD, LLD, validation, and approval
 /uiux <workflow-id>                         UI/UX designer only
 /estimate <workflow-id>                     estimation & cost only
 /risk <workflow-id>                         risk & compliance only -> Gate 3
@@ -217,12 +221,13 @@ See `SETUP_DECISIONS.md` for the full list, notably:
 
 ## 15. Development to QA workflow
 
-Run `/develop <work-item-id> <approved-requirement-path> --architecture <approved-architecture-path> [--repo <path>] [--test-strategy <path>]` after product and architecture approval.
+First run `/generate-architecture [workflow-id] --repo <target-repository>` to produce and approve the HLD and LLD. Then run `/develop <work-item-id> <approved-requirement-path> [--repo <path>] [--test-strategy <path>]`. Development refuses to start unless solution architecture, HLD, and LLD are approved and `architecture-validation.json` says `PASS` and `development_ready: true`.
 
 The development orchestrator runs this deterministic sequence:
 
 ```text
 Requirements validation
+  (approved HLD + LLD required)
   -> repository-aware implementation plan
   -> independent tech-lead review
   -> implementation + focused tests

@@ -10,7 +10,7 @@ Turn an implementation-ready requirement into an executable plan. The plan is th
 
 ## Preconditions
 
-Require `<artifact_dir>/requirements-validation.json` with `status: PASS` and approved requirement/architecture sources. Stop on missing or failed inputs.
+Require `<artifact_dir>/requirements-validation.json` with `status: PASS`, approved requirement/HLD/LLD sources, and matching architecture validation. Stop on missing, failed, draft, or stale inputs.
 
 ## Repository discovery
 
@@ -26,6 +26,7 @@ Do not assume a framework, layer model, default branch, or command. Prefer the r
 ## Planning rules
 
 - Trace every planned behavior to an acceptance-criterion/source ID.
+- Trace every planned component/module/contract to `HLD-` and `LLD-` IDs; planning may select and schedule the approved design but may not create a replacement design.
 - List every file to create, modify, or delete; never use “other files as needed.”
 - Describe the actual execution/data flow using the repository's own module boundaries.
 - Specify public contracts, validation, auth/authz, error behavior, persistence/migrations, idempotency/concurrency, telemetry, configuration, and compatibility when relevant.
@@ -48,7 +49,7 @@ Write `<artifact_dir>/implementation-plan.md` with:
 9. Test scenarios (ID, level, expected result, owner: Development or QA).
 10. Verification commands.
 11. Rollback/recovery.
-12. Risks, assumptions, deviations, and open questions.
+12. Risks, assumptions, deviations, and open questions. Any deviation from HLD/LLD routes back to architecture approval.
 13. Plan checksum: sorted in-scope file list plus counts.
 
 Any material open question or architecture deviation makes the plan `BLOCKED`; do not hand it to development.

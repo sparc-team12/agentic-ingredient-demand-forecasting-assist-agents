@@ -17,12 +17,17 @@ Require:
 - a stable `work_item_id`
 - repository root
 - approved requirement source (ticket, story, feature, CR, or PRD requirement)
-- approved architecture/design source
+- approved `artifacts/architecture/solution-architecture.md`
+- approved `artifacts/architecture/high-level-design.md`
+- approved `artifacts/architecture/low-level-design.md`
+- `artifacts/architecture/architecture-validation.json` with `status: PASS` and `development_ready: true`
 - test-strategy source when available
 
 Create `artifacts/development/<work-item-id>/` and keep all workflow artifacts there. Normalize the directory slug to lowercase letters, digits, and hyphens while preserving the original ID inside artifacts.
 
 Read `config/project.yaml` for development limits and artifact root. If the block is absent, use the defaults stated below; never silently exceed a configured limit.
+
+Before creating development state, confirm the HLD and LLD metadata show `Human approval status: APPROVED` and that validation identifiers match the current source artifacts. Missing, draft, failed, or stale design evidence routes back to `solution-architecture-suite-orchestrator-agent`; development must not compensate by designing during planning.
 
 ## Fast, safe stage sequence
 
@@ -47,6 +52,7 @@ Stages are sequential because each consumes the prior artifact. Parallelism is a
 Stop immediately when:
 
 - an input is unapproved, missing, contradictory, or not testable
+- HLD/LLD approval or architecture validation is missing, failed, or stale
 - plan scope requires an unapproved architecture/product decision
 - unrelated working-tree changes overlap an intended edit
 - a required dependency/tool cannot be installed or accessed within authorized scope

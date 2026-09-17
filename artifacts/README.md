@@ -9,7 +9,7 @@ Every file under this directory is generated output from a specialist agent (see
 | `research/` | research-requirements-agent | `requirements-baseline.md`, `open-questions.md` — dispatched by prd-agent as it hits gaps, not run standalone first |
 | `features/` | feature-analyst-agent | `feature-specification.md` |
 | `stories/` | user-story-analyst-agent | `user-stories.md` |
-| `architecture/` | solution-architect-agent | `solution-architecture.md` |
+| `architecture/` | solution-architect-agent + architecture-suite agents | `solution-architecture.md`, overview, security architecture, technology stack, `high-level-design.md`, `low-level-design.md`, and `architecture-validation.json` |
 | `design/` | uiux-designer-agent | `ui-ux-specification.md` |
 | `estimation/` | estimation-cost-agent | `estimation-cost-analysis.md` |
 | `risk/` | risk-compliance-agent | `risk-register.md` |

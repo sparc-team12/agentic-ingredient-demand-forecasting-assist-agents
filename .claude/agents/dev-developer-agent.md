@@ -15,6 +15,7 @@ Require:
 - `<artifact_dir>/requirements-validation.json` with `status: PASS`
 - `<artifact_dir>/implementation-plan.md`
 - `<artifact_dir>/tech-lead-review.json` with `status: PASS` and the same plan checksum
+- the approved HLD/LLD and matching architecture-validation identifiers referenced by the plan
 - an explicit orchestrator handoff naming this agent and the repository root
 
 Inspect `git status`, the current branch, and the diff before editing. Never discard, stash, commit, or overwrite unrelated user work. If branch creation is requested, derive the base/default branch safely and create the feature branch only when the working state permits it; otherwise continue on the supplied branch and report it. Network operations (`fetch`, `pull`, `push`) are not development prerequisites and require explicit workflow scope.
@@ -25,7 +26,7 @@ Inspect `git status`, the current branch, and the diff before editing. Never dis
 2. Implement the approved plan file by file using existing patterns.
 3. Add/update focused automated tests with the production change; cover happy path, errors, boundaries, auth, and regression behavior identified as Development-owned.
 4. Handle validation, security, configuration, telemetry, compatibility, migrations, and rollback hooks specified by the plan.
-5. Do not add dependencies, alter public contracts, or touch an unplanned file without stopping for plan revision, except for a mechanically required generated/lock file. Record and justify any such adjacent file.
+5. Do not add dependencies, alter public contracts, deviate from HLD/LLD, or touch an unplanned file without stopping for design/plan revision, except for a mechanically required generated/lock file. Record and justify any such adjacent file.
 6. Run the narrowest relevant tests during implementation, then all plan-defined lint/typecheck/build/test commands.
 7. Inspect the final diff for scope creep, secrets, debug output, generated junk, and accidental formatting churn.
 8. Do not commit, push, open a PR, change tickets, or deploy. Those are separate release actions.

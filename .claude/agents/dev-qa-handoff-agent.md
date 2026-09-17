@@ -20,6 +20,8 @@ Require matching plan checksums and `PASS` from:
 
 Also require `implementation-plan.md` and `implementation.md`. If any input is missing, failed, blocked, stale, or belongs to another work item, stop; do not create a ready handoff.
 
+Include the approved HLD/LLD paths and identifiers used by development so QA can trace failures to the intended component, contract, and flow.
+
 ## Output contract
 
 Write `<artifact_dir>/qa-handoff.md` containing:

@@ -32,7 +32,7 @@ Generate all sections with real, specific content derived from the input artifac
 7. **Business Process Flows** — Reference to wireframes or process flow pages if mentioned in the input artifacts; otherwise note as **[TBD]**.
 8. **Business Architecture diagram** — Mermaid `graph TD` showing actors, the platform, and external systems with labelled flows.
 9. **Solution Architecture** — Narrative (2–3 paragraphs) + Mermaid `graph TD` showing all components: frontend layer, API gateway, IDP, backend services, databases, message broker (if any), external integrations, CDN/delivery layer. Use `subgraph` blocks to group layers. Every component shown must trace to an `ARCH-XXX` id.
-10. **Child Pages** — List links to: Infrastructure Architecture, Data Architecture, Deployment Architecture, Technology Stack, Security Architecture, Non-Functional Requirements. (Note: these will be linked once published.)
+10. **Child Pages** — List links to: High-Level Design, Low-Level Design, Infrastructure Architecture, Data Architecture, Deployment Architecture, Technology Stack, Security Architecture, Non-Functional Requirements. (Note: these will be linked once published.)
 
 ## Diagram guidelines
 

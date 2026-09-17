@@ -45,6 +45,9 @@ quality:
 development:
   enabled: true
   artifacts_root: "artifacts/development"
+  require_approved_hld: true
+  require_approved_lld: true
+  require_architecture_validation: true
   max_plan_revision_rounds: 2
   max_code_review_rework_rounds: 3
   terminal_status: "READY_FOR_QA"

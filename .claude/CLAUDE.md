@@ -18,6 +18,7 @@ AI accelerates product discovery and SDLC planning. Humans remain the decision a
 - `workflow/decisions.md` — human decision log.
 - `artifacts/` — specialist output, organized by domain (research/features/stories/architecture/design/estimation/risk/prd/test-strategy). Nothing here is pre-populated with fabricated content.
 - `artifacts/development/<work-item-id>/` — per-work-item development evidence. `/develop` owns the sequence and stops at `READY_FOR_QA`; it does not create a PR or deploy.
+- `artifacts/architecture/high-level-design.md` and `low-level-design.md` — approved HLD/LLD bridge between solution architecture and development; `architecture-validation.json` must declare the current pair development-ready.
 - `config/project.yaml` — Confluence target (site/space/parent page) and workflow toggles. No secrets belong here.
 - `examples/ingredient-demand-forecasting.md` — demo input for `/product-plan`.
 - `SETUP_DECISIONS.md` — decisions made while building this system itself (not workflow decisions — those go in `workflow/decisions.md`).
@@ -26,10 +27,11 @@ AI accelerates product discovery and SDLC planning. Humans remain the decision a
 
 - Never fabricate research, estimates, metrics, approvals, or Confluence connectivity status.
 - Never convert an assumption into a requirement without flagging it as an assumption.
-- Every feature/story/architecture/UI/estimate/risk/test-strategy item gets a stable ID (`FEAT-`, `US-`, `ARCH-`, `UI-`, `EST-`, `RISK-`, `TS-`) and traces back to its source.
+- Every feature/story/architecture/design/UI/estimate/risk/test-strategy item gets a stable ID (`FEAT-`, `US-`, `ARCH-`, `HLD-`, `LLD-`, `UI-`, `EST-`, `RISK-`, `TS-`) and traces back to its source.
 - Never overwrite an existing Confluence page without explicit human approval for that specific page.
 - Do not commit API tokens, passwords, OAuth secrets, or personal credentials anywhere in this repo.
 - Development must use the canonical `.claude/agents/dev-orchestrator-agent.md` workflow. Do not mix its per-work-item artifacts with the retired root-level numbered artifact convention.
+- Development must not start from solution architecture alone. Approved HLD, approved LLD, and matching architecture validation are hard prerequisites.
 - A development stage may advance only on an explicit `PASS` artifact for the same work item and plan checksum. `COMPLETED` is not synonymous with reviewed or QA-ready.
 - `READY_FOR_QA` is the terminal development state. QA/e2e, PR, release, and deployment require their own explicit workflow and evidence.
 - Confluence access in this environment goes through the **claude.ai Atlassian Rovo** MCP connector tools (`mcp__claude_ai_Atlassian_Rovo__*`) — do not assume a different MCP server/tool name without checking what's actually configured.

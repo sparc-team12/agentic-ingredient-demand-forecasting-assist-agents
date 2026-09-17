@@ -22,6 +22,9 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
   - `artifacts/architecture/solution-architecture-overview.md` (narrative Confluence-page draft from `solution-architecture-overview-agent`)
   - `artifacts/architecture/security-architecture.md` (from `solution-security-architecture-agent`)
   - `artifacts/architecture/tech-stack.md` (from `solution-tech-stack-agent`)
+  - `artifacts/architecture/high-level-design.md` (from `solution-hld-agent`)
+  - `artifacts/architecture/low-level-design.md` (from `solution-lld-agent`)
+  - `artifacts/architecture/architecture-validation.json` (from `solution-architecture-validator-agent`, when already generated)
   - `artifacts/features/feature-epic-breakdown*.md` (Shape B Epic/Feature breakdown from `feature-analyst-agent` — source of `EPIC-`/`FEAT-` ids where this shape is used instead of `feature-specification.md`)
   - a user-journeys document, if one exists (local or Confluence-sourced) — Shape B's flow/navigation source
   - `artifacts/design/ui-ux-specification*.md` (Shape B UI/UX draft from `uiux-designer-agent`, tracing to `EPIC-`/`FEAT-`/`REQ-` instead of `FEAT-`/`US-`)
@@ -32,6 +35,8 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Feature vs. user-story alignment — every `FEAT-XXX` has at least one story, every story's `Traces to` resolves to a real feature ID.
 - Architecture vs. feature requirements — every `ARCH-XXX` traces to a real feature/requirement; no feature requiring persistence/integration/auth left unaddressed by any `ARCH-XXX`.
 - Solution Architecture Overview / Security Architecture / Tech Stack vs. `ARCH-XXX` — every component/technology named in these three narrative pages traces to an actual `ARCH-XXX` entry; flag any page that names a technology or component the engineering architecture artifact never mentions.
+- HLD vs. architecture suite — every `HLD-XXX` traces to approved `ARCH-` and requirement IDs; component boundaries, technologies, trust boundaries, integrations, and deployment assumptions agree with the overview/security/stack documents.
+- LLD vs. HLD — every `LLD-XXX` traces to an `HLD-XXX`; module dependencies, interfaces, schemas, security controls, errors, persistence, and file mappings implement rather than contradict the HLD.
 - Feature/Epic breakdown vs. `ARCH-XXX` (Shape B only) — every `EPIC-XXX`/`FEAT-XXX` in `feature-epic-breakdown.md` traces to real `REQ-XXX` ids in the PRD; if `solution-architecture.md` already exists, spot-check that no `ARCH-XXX` component lacks a corresponding feature that would need it (an architecture component with nothing driving it is itself a finding).
 - Security Architecture vs. risk register — every control in `security-architecture.md` has a corresponding `RISK-XXX` (or is itself the mitigation named on one); every security-relevant `RISK-XXX` has a corresponding control.
 - UI/UX vs. user journeys — every `UI-XXX` traces to a real story/feature; no story implying a screen that has no `UI-XXX`.
@@ -49,12 +54,14 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Missing test coverage — any NFR `REQ-XXX` or Critical/High `RISK-XXX` with no corresponding `TS-XXX`; any `FEAT-XXX`/`US-XXX` the test strategy's coverage approach never mentions.
 - Missing dependencies — features/stories/architecture items with no dependency section filled in when one plausibly exists.
 - Missing assumptions — architecture/estimation/risk items that read as certain but rest on an unstated assumption.
+- Missing implementation design — any HLD component without LLD decomposition, or any LLD contract lacking validation/error/test treatment required for development.
 
 ### Feasibility
 - Technical feasibility — architecture choices that conflict with stated constraints.
 - Timeline sanity — does the overall estimate range look internally consistent with the stated complexity distribution.
 - Cost sanity — does the cost basis match what was actually specified (no invented vendor pricing).
 - Integration feasibility — external integrations named in architecture but never surfaced as an open question/risk when their availability is unconfirmed.
+- Repository feasibility — LLD files, commands, dependencies, and framework patterns contradict the target repository or remain unverified without an explicit greenfield decision.
 
 ### Quality / Security
 - Security gaps — authN/authZ, data-at-rest/in-transit, and API boundary items from architecture that have no corresponding risk entry.
@@ -63,6 +70,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Every `[SECURITY REVIEW REQUIRED]` marker in `security-architecture.md` — surface each one individually as a High-severity finding; these route through the Architecture Suite human-approval gate (`solution-architecture-suite-orchestrator-agent`), not this checklist alone.
 - Testability — acceptance criteria that aren't actually verifiable as written.
 - Operational readiness — architecture's observability/availability notes actually cover what the NFRs demand.
+- Design security continuity — security controls and sensitive-data boundaries remain present from security architecture through HLD and LLD, with no layer silently dropping enforcement.
 
 ## Output contract
 
