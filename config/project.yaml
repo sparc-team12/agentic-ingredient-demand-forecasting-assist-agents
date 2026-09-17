@@ -1,0 +1,34 @@
+project:
+  name: "Agentic Ingredient Demand Forecasting Assist Agents"
+  description: ""
+
+confluence:
+  enabled: true
+  # Detected and verified via the "claude.ai Atlassian Rovo" MCP connector during setup
+  # (2026-09-17): account sparc.team12@experionglobal.com, site below. Re-verify with
+  # atlassianUserInfo / getAccessibleAtlassianResources if publishing ever fails.
+  site: "https://experionglobal.atlassian.net"
+  space: ""
+  parent_page: ""
+  create_if_missing: false
+  allow_updates: false
+
+workflow:
+  require_human_approval: true
+  publish_requires_approval: true
+  max_parallel_agents: 6
+
+agents:
+  research_requirements: true
+  feature_analyst: true
+  user_story_analyst: true
+  solution_architect: true
+  uiux_designer: true
+  estimation_cost: true
+  risk_compliance: true
+
+quality:
+  require_traceability: true
+  require_assumptions: true
+  require_open_questions: true
+  require_validation: true
