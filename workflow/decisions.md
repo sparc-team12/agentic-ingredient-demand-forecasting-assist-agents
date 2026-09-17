@@ -437,3 +437,23 @@ Impact:
 
 Related:
 infra/main.tf (aws_route.igw)
+
+## DEC-019 — Remove Terraform-managed GitHub OIDC provider/role; the user created one manually instead
+
+Decision:
+Removed `data "tls_certificate" "github_actions"`, `resource "aws_iam_openid_connect_provider" "github_actions"`, `resource "aws_iam_role" "github_actions"`, the `github_org`/`github_repo`/`github_ref_pattern` variables, the `github_actions_role_arn` output, and the now-unused `tls` provider requirement from `infra/main.tf`. The user manually created a separate IAM role (`github-terraform-role`) with its own trust policy in the IAM console, outside of Terraform.
+
+Decided by:
+sparc.team12@experionglobal.com, directly in conversation on 2026-09-18 — "yes i set uped the user role seperately so modify the config accordingly," after discovering the ARN they had didn't match what `infra/main.tf` was set up to create.
+
+Reason:
+AWS allows only one OIDC identity provider per URL per account — if Terraform's `aws_iam_openid_connect_provider.github_actions` were left in place alongside a manually-created provider for the same `token.actions.githubusercontent.com` URL, the next `terraform apply` would fail with an "already exists" error. Removing the Terraform-managed version avoids that conflict and matches how the role is actually being managed in practice.
+
+Alternatives considered:
+Importing the manually-created role/provider into Terraform state (`terraform import`) so they'd still be tracked in code was not chosen — not raised as an option the user asked for, and would require matching the manual role's existing trust policy/name in code first rather than a plain removal.
+
+Impact:
+`infra/main.tf` no longer creates or manages any GitHub OIDC trust infrastructure — that now lives entirely outside this repo's Terraform state, in the manually-created `github-terraform-role`. Permissions for that role still need to be attached by the user (same as the original DEC-015/DEC-012 pattern) — this was never wired up automatically either way. If this project's GitHub OIDC setup is ever revisited, `terraform import` (not recreating the resources) is the path back to Terraform management, since the manual role already exists.
+
+Related:
+infra/main.tf, .github/workflows/terraform.yml, DEC-015 (superseded — the OIDC provider/role it added is now removed from Terraform), DEC-012

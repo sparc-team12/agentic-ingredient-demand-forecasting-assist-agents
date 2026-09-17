@@ -122,7 +122,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — infra/main.tf's aws_iam_role.github_actions output (github_actions_role_arn)
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — ARN of the manually-created github-terraform-role (DEC-019, not managed by infra/main.tf)
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
           role-session-name: github-actions-terraform
 
@@ -134,7 +134,7 @@ jobs:
             -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
         # Secret: TFSTATE_BUCKET_NAME — still a placeholder ({{TFSTATE_BUCKET_NAME}}
         # in infra/main.tf's own comments) until the real AWS account/bucket exists.
-        # key / dynamodb_table / encrypt are already hardcoded in main.tf's backend block.
+        # key / use_lockfile / encrypt are already hardcoded in main.tf's backend block.
 
       - name: terraform plan
         working-directory: ${{ env.TF_DIR }}
@@ -176,7 +176,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — infra/main.tf's aws_iam_role.github_actions output (github_actions_role_arn)
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — ARN of the manually-created github-terraform-role (DEC-019, not managed by infra/main.tf)
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
           role-session-name: github-actions-terraform
 

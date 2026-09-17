@@ -6,20 +6,16 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
-    }
   }
 
   # bucket is deliberately not set here — {{TFSTATE_BUCKET_NAME}} is still an
   # unresolved organizational fact (DEC-007). Pass it at init time instead:
   #   terraform init -backend-config="bucket=<final-bucket-name>"
   backend "s3" {
-    key            = "terraform/prod/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "ingredient-forecast-tfstate-lock"
-    encrypt        = true
+    key          = "terraform/prod/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true # S3 native locking (Terraform >= 1.10) — replaces the deprecated dynamodb_table param, no DynamoDB table needed
+    encrypt      = true
   }
 }
 
@@ -50,26 +46,6 @@ variable "tags" {
     Owner       = "{{OWNER}}"
     CostCenter  = "{{COST_CENTER}}"
   }
-}
-
-# ---- GitHub Actions OIDC ----
-
-variable "github_org" {
-  description = "GitHub org/user that owns the repo allowed to assume the CI role."
-  type        = string
-  default     = "sparc-team12" # matches this repo's actual git remote (origin)
-}
-
-variable "github_repo" {
-  description = "GitHub repo name allowed to assume the CI role, scoped further by github_ref_pattern."
-  type        = string
-  default     = "agentic-ingredient-demand-forecasting-assist-agents"
-}
-
-variable "github_ref_pattern" {
-  description = "Which refs may assume the CI role, as a token.actions.githubusercontent.com:sub pattern suffix. Default allows any branch/PR/environment in this repo — narrow this once branch protection stabilizes (e.g. \"ref:refs/heads/main\" for main-only)."
-  type        = string
-  default     = "*"
 }
 
 # ---- Networking ----
@@ -183,57 +159,15 @@ variable "log_retention_days" {
 }
 
 # =============================================================================
-# GitHub Actions OIDC — lets .github/workflows/terraform.yml assume an AWS
-# role via short-lived, federated credentials instead of long-lived access
-# keys. Bootstrapping note: the very first `terraform apply` that creates
-# this OIDC provider + role must be run with separate (e.g. your own local)
-# AWS credentials — the pipeline can't assume a role that doesn't exist yet.
-# Once applied, put this role's ARN (see the output below) in the repo's
-# AWS_ROLE_ARN secret and the pipeline can use it for every apply after,
-# including future changes to this very resource.
+# GitHub Actions OIDC — NOT managed by this Terraform config (DEC-019). The
+# GitHub Actions IAM role (github-terraform-role) and its trust policy were
+# created manually in the IAM console instead. Terraform does not define an
+# aws_iam_openid_connect_provider or aws_iam_role for this here on purpose —
+# AWS allows only one OIDC provider per URL per account, so a Terraform-owned
+# one would conflict with the manually-created setup. If you ever want this
+# brought under Terraform management, the manually-created role/provider
+# would need to be imported (`terraform import`), not recreated from scratch.
 # =============================================================================
-
-data "tls_certificate" "github_actions" {
-  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
-}
-
-resource "aws_iam_openid_connect_provider" "github_actions" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.github_actions.certificates[0].sha1_fingerprint]
-
-  tags = var.tags
-}
-
-resource "aws_iam_role" "github_actions" {
-  name = "${var.app_name}-github-actions-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "GitHubActionsOIDC"
-      Effect    = "Allow"
-      Principal = { Federated = aws_iam_openid_connect_provider.github_actions.arn }
-      Action    = "sts:AssumeRoleWithWebIdentity"
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-        }
-        StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:${var.github_ref_pattern}"
-        }
-      }
-    }]
-  })
-
-  tags = var.tags
-}
-
-# Permissions for this role are deliberately NOT wired up here — attach
-# infra/iam-policy.json's statements (with {{ACCOUNT_ID}}/{{PROJECT_NAME}}
-# resolved) yourself, the same way you said you'd handle credentials
-# yourself for the static-key approach. If you'd rather have Terraform
-# attach it automatically, say so and I'll wire it in.
 
 # =============================================================================
 # Networking
@@ -580,9 +514,4 @@ output "log_group_name" {
 output "data_volume_id" {
   description = "SQLite persistent data volume ID."
   value       = aws_ebs_volume.data.id
-}
-
-output "github_actions_role_arn" {
-  description = "Put this in the repo's AWS_ROLE_ARN secret for .github/workflows/terraform.yml's OIDC auth step."
-  value       = aws_iam_role.github_actions.arn
 }
