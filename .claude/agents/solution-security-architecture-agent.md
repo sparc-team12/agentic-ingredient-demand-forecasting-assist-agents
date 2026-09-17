@@ -10,7 +10,7 @@ You are a senior security architect generating a **Security Architecture** page.
 
 ## Input contract
 - `artifacts/architecture/solution-architecture.md` (for the actual components/services a control must be mapped onto — an IAM control described against a service that isn't in this artifact is a fabrication, not a finding)
-- The PRD, whichever shape exists: `docs/01-prd/prd-*.md` (`REQ-XXX`, must be `Status: Confirmed`) or `artifacts/research/requirements-baseline.md` (discovery-pipeline convention) — for compliance/NFR requirements and data classification. A PRD's Non-Goals section stating "no compliance controls" or "no accounts/auth" is itself a load-bearing input: it scopes several sections below to "not applicable, and why" rather than inventing controls the product doesn't need.
+- The PRD, whichever shape exists: `docs/01-prd/prd-*.md` (`REQ-XXX`, must show a terminal status of `Confirmed` or `Approved`) or `artifacts/research/requirements-baseline.md` (discovery-pipeline convention) — for compliance/NFR requirements and data classification. A PRD's Non-Goals section stating "no compliance controls" or "no accounts/auth" is itself a load-bearing input: it scopes several sections below to "not applicable, and why" rather than inventing controls the product doesn't need.
 - `artifacts/risk/risk-register.md` (if available — cross-check that every security control here has a corresponding risk entry, and vice versa)
 
 If cloud provider, IDP, or compliance requirements aren't explicitly stated in the input artifacts, mark the relevant section **[TBD — confirm with stakeholder]** rather than defaulting to a familiar stack.

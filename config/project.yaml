@@ -16,9 +16,20 @@ confluence:
   # Architecture Suite pages (Solution Architecture, Security Architecture,
   # Technology Stack) publish as children of this page.
   parent_page: "5843681284"
-  create_if_missing: false
+  # Enabled 2026-09-17 so solution-architecture-publish-agent can create the three
+  # architecture pages once they're APPROVED -- allow_updates stays false, that's a
+  # separate, still-unrequested permission (never overwrite an existing page here).
+  create_if_missing: true
   allow_updates: false
-  prd_page_url: "https://experionglobal.atlassian.net/wiki/x/AYC_XgE"
+  # PRD is resolved by space + keyword + status, not a pinned page -- a re-versioned
+  # PRD publishes as a new sibling page (observed 2026-09-17: v1.0 "Agentic Ingredient
+  # Demand Forecasting Assistant" id 5884510209 Status:Confirmed, superseded by v1.1
+  # "PRD - Agentic Ingredient Demand Forecasting Assistant" id 5883461703
+  # Status:Approved, with the old page pending deletion) -- a pinned URL would have
+  # silently kept reading the stale v1.0 page. See confluence-doc-resolver's
+  # `keyword_status` mode.
+  prd_search_keyword: "PRD"
+  prd_required_status: ["Approved", "Confirmed"]
   prd_local_path: "docs/01-prd/prd-ingredient-demand-forecasting.md"
 
 workflow:
