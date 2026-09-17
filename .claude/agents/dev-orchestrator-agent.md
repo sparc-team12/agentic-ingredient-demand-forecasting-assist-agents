@@ -22,17 +22,19 @@ Require:
 
 Create `artifacts/development/<work-item-id>/` and keep all workflow artifacts there. Normalize the directory slug to lowercase letters, digits, and hyphens while preserving the original ID inside artifacts.
 
+Read `config/project.yaml` for development limits and artifact root. If the block is absent, use the defaults stated below; never silently exceed a configured limit.
+
 ## Fast, safe stage sequence
 
 1. **Validate requirements** — `dev-requirements-validator-agent` → `requirements-validation.json`.
 2. **Plan** — `planning-sprint-agent` → `implementation-plan.md`.
 3. **Review plan** — `dev-tech-lead-agent` → `tech-lead-review.json`.
-   - On `FAIL`, return to planning. Maximum two automatic revision rounds; then stop with the unresolved findings.
+   - On `FAIL`, return to planning. Default maximum: two automatic revision rounds; then stop with the unresolved findings.
 4. **Implement** — `dev-developer-agent` → source/test changes + `implementation.md`.
 5. **Close unit-test gaps** — `test-unit-agent` → `unit-test-report.md`.
    - Product-code failure returns to development; test-only failure returns to the unit-test agent.
 6. **Independent code review** — `code-review-agent` → `code-review.json`.
-   - On `FAIL`, return to development, rerun unit tests, then rereview. Maximum three review/rework rounds; never waive Critical/Major findings to meet a deadline.
+   - On `FAIL`, return to development, rerun unit tests, then rereview. Default maximum: three review/rework rounds; never waive Critical/Major findings to meet a deadline.
 7. **Reproduce verification** — `test-verifier-agent` → `development-verification.json`.
    - A regression returns to development; environment/tooling `BLOCKED` stops the flow.
 8. **Package QA handoff** — `dev-qa-handoff-agent` → `qa-handoff.md`.

@@ -14,5 +14,8 @@ Every file under this directory is generated output from a specialist agent (see
 | `estimation/` | estimation-cost-agent | `estimation-cost-analysis.md` |
 | `risk/` | risk-compliance-agent | `risk-register.md` |
 | `test-strategy/` | test-strategy-agent | `test-strategy.md` — guideline for later test planning/case generation/automation |
+| `development/<work-item-id>/` | dev-orchestrator-agent + development specialists | requirements validation, implementation plan, tech-lead review, implementation evidence, unit-test report, code review, final verification, and `qa-handoff.md` |
 
 Every artifact carries the metadata block (Workflow ID, Agent, Created, Status, Source artifacts, Human approval status) described in `.claude/skills/product-discovery/SKILL.md`. Treat any artifact whose `Human approval status` is not `APPROVED` as a draft — downstream agents must not build on it as if it were final.
+
+Development artifacts use the schemas in `.claude/agents/dev-orchestrator-agent.md`. They are linked by `work_item_id` and plan checksum rather than the discovery metadata block. Do not create legacy root-level files such as `01-jira.md` or `07-code-verification.json` for new work.

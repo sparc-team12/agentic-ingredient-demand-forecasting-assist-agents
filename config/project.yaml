@@ -41,3 +41,10 @@ quality:
   require_assumptions: true
   require_open_questions: true
   require_validation: true
+
+development:
+  enabled: true
+  artifacts_root: "artifacts/development"
+  max_plan_revision_rounds: 2
+  max_code_review_rework_rounds: 3
+  terminal_status: "READY_FOR_QA"

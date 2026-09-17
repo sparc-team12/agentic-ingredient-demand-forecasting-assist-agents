@@ -1,6 +1,6 @@
 # agentic-ingredient-demand-forecasting-assist-agents
 
-A human-in-the-loop AI product discovery and planning system, built on Claude Code. You give it a product idea, requirement, ticket, or business problem; a **Product Discovery & Planning Orchestrator** dispatches an entry-point PRD agent and eight specialist subagents to produce a validated PRD package plus a test strategy document. Humans approve at defined gates throughout — this system does **not** autonomously build or ship a product; it accelerates discovery and planning while people stay accountable for requirements, architecture, estimates, risk acceptance, and publication.
+A human-in-the-loop product discovery, planning, and development-agent system built on Claude Code. The discovery orchestrator produces approved requirements, architecture, and test strategy; the separate development orchestrator can then implement one approved work item through independent verification and a structured QA handoff. It never treats development completion as QA approval and does not autonomously release or deploy.
 
 ## 1. What this system does
 
@@ -93,6 +93,9 @@ Specialist agents are direct children of the orchestrator — there is no recurs
 | Estimation & Cost | `.claude/agents/estimation-cost-agent.md` | `artifacts/estimation/estimation-cost-analysis.md` (`EST-XXX`) |
 | Risk & Compliance | `.claude/agents/risk-compliance-agent.md` | `artifacts/risk/risk-register.md` (`RISK-XXX`) |
 | Test Strategy | `.claude/agents/test-strategy-agent.md` | `artifacts/test-strategy/test-strategy.md` (`TS-XXX`) — guideline for test planning, test case generation, and test automation |
+| Development Orchestrator | `.claude/agents/dev-orchestrator-agent.md` | Per-work-item stage control and `dev-status.json`; terminal state `READY_FOR_QA` |
+| Development specialists | `.claude/agents/dev-*.md`, `planning-sprint-agent.md`, `test-unit-agent.md`, `code-review-agent.md`, `test-verifier-agent.md` | Plan, implementation, tests, reviews, verification, and `qa-handoff.md` under `artifacts/development/<work-item-id>/` |
+| QA E2E | `.claude/agents/test-e2e-agent.md` | Post-handoff `qa-e2e-report.md` against an approved non-production environment |
 
 Each agent file states its input contract, output contract, allowed tools, and what it must **not** decide unilaterally.
 
@@ -111,12 +114,12 @@ Each agent file states its input contract, output contract, allowed tools, and w
 
 ```text
 .claude/
-  agents/            10 subagent definitions (orchestrator + prd-agent + 8 specialists)
+  agents/            discovery/planning agents plus the development-to-QA pipeline
   skills/
     product-discovery/SKILL.md   master orchestration procedure (dispatch order, gates)
     validation-review/SKILL.md   consistency/completeness/feasibility/quality-security checklist
     confluence-publish/SKILL.md  MCP verification, search-before-create, CREATE vs UPDATE, publish
-  commands/          /product-plan, /orchestrate, /research, /features, /stories,
+  commands/          /product-plan, /orchestrate, /develop, /research, /features, /stories,
                       /architecture, /uiux, /estimate, /risk, /test-strategy, /review,
                       /status, /prd, /publish, /retry, /skip
   CLAUDE.md          repo-level operating rules for Claude Code
@@ -169,6 +172,7 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 /retry <workflow-id> <agent>                retry a failed agent
 /skip <workflow-id> <agent>                 skip an agent (requires confirmation)
 /status [workflow-id]                       show workflow state
+/develop <id> <requirement-path> ...        implement one approved work item through READY_FOR_QA
 ```
 
 ## 9. Example workflow
@@ -210,3 +214,23 @@ See `SETUP_DECISIONS.md` for the full list, notably:
 8. Confirm the exact Confluence page list at Gate 5 to publish (PRD and test strategy each land under the project's PRD folder).
 9. Check /status <workflow-id> at any point to see where things stand.
 ```
+
+## 15. Development to QA workflow
+
+Run `/develop <work-item-id> <approved-requirement-path> --architecture <approved-architecture-path> [--repo <path>] [--test-strategy <path>]` after product and architecture approval.
+
+The development orchestrator runs this deterministic sequence:
+
+```text
+Requirements validation
+  -> repository-aware implementation plan
+  -> independent tech-lead review
+  -> implementation + focused tests
+  -> unit/component test closure
+  -> independent code review (with bounded rework loop)
+  -> clean-room verification
+  -> QA handoff
+  -> READY_FOR_QA (stop)
+```
+
+Evidence is stored under `artifacts/development/<work-item-id>/`. The QA handoff includes acceptance-criterion traceability, changed components, environment/migration notes, verification results, risks, and prioritized QA scenarios. QA can then invoke `test-e2e-agent` against an explicitly approved non-production environment. PR creation, release, and deployment remain separate, explicitly authorized stages.
