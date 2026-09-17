@@ -417,3 +417,23 @@ If OS package installs during instance bootstrap need plain HTTP (port 80) egres
 
 Related:
 infra/main.tf (aws_security_group.app), security-architecture.md §8 (marker 9 still open), DEC-010
+
+## DEC-018 — Fixed `terraform fmt -check` failure: misaligned `=` in aws_route.igw
+
+Decision:
+`terraform fmt -check -recursive` failed in CI (exit code 3). Root cause: `aws_route.igw`'s `gateway_id` line had one extra space before `=`, breaking Terraform's column-alignment convention with the other two attributes in that block (`route_table_id`, `destination_cidr_block`). Fixed by removing the stray space. No Terraform CLI is available in this execution environment, so alignment across the whole file was verified with a PowerShell script that checks every contiguous group of single-line attribute assignments for consistent `=` column position, rather than by eye.
+
+Decided by:
+sparc.team12@experionglobal.com pasted the CI log showing the `terraform fmt` failure; this is a pure formatting fix with no judgment call involved, so no confirmation was sought before applying it.
+
+Reason:
+`terraform fmt -check` requires exact canonical formatting; a single stray space fails the whole check regardless of severity. This particular misalignment likely originated from one of the many sequential edits made to this file across the session.
+
+Alternatives considered:
+None — this is a mechanical formatting fix, not a design decision.
+
+Impact:
+`terraform fmt -check -recursive` should now pass. The alignment-check script also flagged `Sid`/`Effect`/`Principal`/`Action` in the `aws_kms_key.logs` policy's second statement as "misaligned" — confirmed to be a false positive (a multi-line list value, `Action = [...]`, legitimately breaks Terraform's alignment grouping from the single-line attributes above it), not a real formatting bug.
+
+Related:
+infra/main.tf (aws_route.igw)
