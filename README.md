@@ -195,9 +195,9 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 /features <workflow-id>                     feature analyst only (requires Gate 1 approved)
 /stories <workflow-id>                      user story analyst only -> Gate 3 (requires Gate 2 approved)
 /architecture <workflow-id>                 solution architect only (requires Gate 1 approved)
-/generate-architecture [id] --repo <path>   separate workflow: architecture suite, HLD, LLD, validation, and
-                                             approval, run by solution-architecture-suite-orchestrator-agent
-                                             (its own gate, independent of Gates 1-7 above)
+/generate-architecture [id] --repo <path>   separate workflow, same orchestrator: architecture suite, HLD,
+                                             LLD, independent validation, and approval (its own gate,
+                                             independent of Gates 1-7 above), then development handoff
 /uiux <workflow-id>                         UI/UX designer only (requires feature spec to exist)
 /estimate <workflow-id>                     estimation & cost only (requires Gate 3 approved)
 /risk <workflow-id>                         risk & compliance only -> Gate 4

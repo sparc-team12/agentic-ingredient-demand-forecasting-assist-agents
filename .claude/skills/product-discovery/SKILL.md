@@ -1,6 +1,6 @@
 ---
 name: product-discovery
-description: Master orchestration procedure for the human-gated AI product discovery workflow. Invoked by the /product-plan, /orchestrate, /research, /features, /stories, /architecture, /uiux, /estimate, /risk, /test-strategy, /prd, /review, /status, /publish, /retry, and /skip commands (not /generate-architecture — see §7b). Coordinates prd-agent and the discovery-pipeline specialist subagents in .claude/agents/ (including test-strategy-agent), maintains workflow/status.json and workflow/events.jsonl, enforces human approval gates, and delegates validation to the validation-review skill and Confluence publishing to the confluence-publish skill.
+description: Master orchestration procedure for the human-gated AI product discovery workflow and the Architecture Suite/HLD/LLD workflow. Invoked by the /product-plan, /orchestrate, /research, /features, /stories, /architecture, /uiux, /estimate, /risk, /test-strategy, /prd, /review, /status, /publish, /retry, /skip, and /generate-architecture commands. Coordinates prd-agent and the specialist subagents in .claude/agents/ (including test-strategy-agent and the architecture-suite/HLD/LLD specialists), maintains workflow/status.json and workflow/events.jsonl, enforces human approval gates, and delegates validation to the validation-review skill and Confluence publishing to the confluence-publish skill.
 ---
 
 # Product Discovery & Planning — Orchestration Procedure
@@ -184,7 +184,7 @@ Dispatch each specialist by invoking its agent definition in `.claude/agents/` w
 - **PUBLISH** (`/publish <workflow-id>`): run the Confluence publication procedure (§8) for the final package — only valid once Gate 6 has recorded `APPROVE_AND_PUBLISH`. (Individual-artifact Confluence publishes and the Jira story publish happen inline in the pipeline, right after Gates 1/2/4/5 — see §2 and §8.)
 - **RETRY** (`/retry <workflow-id> <agent>`): reset that agent's status to `QUEUED`, increment `revisionCount`, re-dispatch it with the same inputs.
 - **SKIP** (`/skip <workflow-id> <agent>`): mark `SKIPPED` only after explicit human confirmation; first explain which downstream agents/gates depend on this agent's output and what will be missing from the final PRD if skipped.
-(`/generate-architecture` is not a mode of this skill — see §7b.)
+- **GENERATE_ARCHITECTURE** (`/generate-architecture [workflow-id]`): run the Architecture Suite / HLD / LLD workflow (§7b) end to end — resolve the approved PRD, `ARCH-XXX` generation/approval, the five-document suite (overview/security/stack/HLD/LLD), independent validation, the Architecture/HLD/LLD Approval gate, development handoff, publish. Independent of the discovery pipeline above; usable against a standalone Shape-B PRD project or right after `/architecture` in the discovery pipeline. The `workflow-id` argument is optional, only needed if this project also runs the discovery pipeline's multi-workflow tracking.
 
 ## 4. Human gates — exact behavior
 
@@ -239,11 +239,19 @@ Include the standard metadata block (Workflow ID, Agent: orchestrator, Created, 
 
 Dispatch `test-strategy-agent` (`.claude/agents/test-strategy-agent.md`) — it owns the full contract (input artifacts, the human-consultation step, output structure, hard rules) so none of that is duplicated here. By this point in the pipeline (§2), its full documented input set already exists: the approved PRD, feature spec, user stories, architecture, UI/UX spec, and risk register. It produces `artifacts/test-strategy/test-strategy.md`, reviewed at Gate 5 and then folded into §7's final assembly as a summary + link — the full document stays its own page, since it's a distinct document with its own downstream readers (test planning, test case generation, test automation).
 
-## 7b. Architecture Suite workflow (`/generate-architecture`) — owned elsewhere
+## 7b. Architecture Suite / HLD / LLD workflow (`/generate-architecture`)
 
-`/generate-architecture` no longer routes through this skill or through `orchestrator-agent` — it dispatches `.claude/agents/solution-architecture-suite-orchestrator-agent.md` directly, a second, independently-gated orchestrator that owns the full architecture-suite → HLD → LLD → validation → human-approval → development-handoff chain, including its own Confluence publish step. See that file for the authoritative procedure, and `.claude/CLAUDE.md`'s "Known scope boundary" section for why this repository currently has more than one orchestrator.
+`orchestrator-agent` owns this end to end — there is no separate architecture-suite orchestrator. Full procedure lives in `orchestrator-agent.md`'s "Architecture Suite / HLD / LLD workflow" section; summarized here for the dispatch-order record:
 
-Report on completion: which PRD was used, `ARCH-XXX` approval status, the three documents' statuses, outstanding `[SECURITY REVIEW REQUIRED]`/`[TBD]` items, and — if published — each page's Confluence URL.
+1. **Resolve the PRD.** Check `config/project.yaml` → `confluence.prd_local_path`; if set and the file exists, read it. Otherwise resolve from Confluence via `confluence-doc-resolver`'s `keyword_status` mode (`confluence.prd_search_keyword` / `confluence.prd_required_status` — a re-versioned PRD publishes as a new sibling page, so a pinned URL can silently go stale). `NotFound`/`AmbiguousMatches` → **stop** and report exactly what was searched/found. On `Resolved`, reconstruct the PRD in `prd-agent`'s standard template, write it to `docs/01-prd/prd-<slug>.md`, update `confluence.prd_local_path`. Confirm `Status: Confirmed`/`Approved` — if `Draft`, **stop**.
+2. **Generate/approve `ARCH-XXX`.** If `artifacts/architecture/solution-architecture.md` isn't already `Human approval status: APPROVED`, dispatch `solution-architect-agent`. Enforce **Gate ARCH-1 — Solution Architecture Approval**: present the full artifact, call out every irreversible/high-impact technology decision individually, require `APPROVE` / `REQUEST_CHANGES` (route back, re-present) / `STOP`.
+3. **Resume-safety check.** Before dispatching anything in step 4, check each of the five downstream documents' existing `Status`/`Human approval status` — an already-approved document is not regenerated; pick up from the first step that isn't already done.
+4. **Generate the suite, HLD, LLD, validate** — see `orchestrator-agent.md` for the exact dependency order (suite in parallel; HLD then LLD then validation, strictly sequential) and the specialists involved (`solution-architecture-overview-agent`, `solution-security-architecture-agent`, `solution-tech-stack-agent`, `solution-hld-agent`, `solution-lld-agent`, `solution-architecture-validator-agent`).
+5. **Gate — Architecture, HLD, and LLD Approval.** Hard-blocks on: validation not `PASS`, a Critical/Major finding, an unaddressed `[SECURITY REVIEW REQUIRED]` marker, a material `[TBD]`/conflict, or `BLOCKED_FOR_DEVELOPMENT`.
+6. **Development handoff.** Hand the five approved paths + validation identity to `dev-orchestrator-agent` (a separate orchestrator, invoked independently via `/develop`) — never a narrative "approved" statement.
+7. **Publish (optional).** Resolve this project's Confluence folder per §1a (same as the discovery pipeline's Gate 0b), then `confluence-publish` with the five-page `PageSet` titled per the naming convention. Never depends on Confluence availability for eligibility.
+
+Report on completion: which PRD was used; `ARCH-XXX`, overview, security, stack, HLD, LLD, and validation paths/statuses; outstanding `[SECURITY REVIEW REQUIRED]`/`[TBD]` items; the gate decision; development eligibility; and publication URLs if published.
 
 ## 8. Publication — Confluence (throughout the pipeline, and `/publish` for the final package at Gate 7) and Jira (Gate 3)
 

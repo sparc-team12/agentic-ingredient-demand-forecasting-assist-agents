@@ -90,6 +90,18 @@ No changes to `user-story-analyst-agent.md` (still out of scope for edits) or to
 
 See `.claude/agents/orchestrator-agent.md` ("Project identification and publish destinations", "Publishing user stories to Jira") and `.claude/skills/product-discovery/SKILL.md` §1a for the authoritative procedure.
 
+## SD-011 — Folded the architecture-suite/HLD/LLD bridge into orchestrator-agent; deleted its publish helpers
+
+The merge in SD-010's neighborhood (see the merge commit) restored `solution-architecture-suite-orchestrator-agent.md` as a second orchestrator, because a parallel branch had substantially extended it (HLD, LLD, independent validation, development handoff) with real executed history. Per explicit direction after that merge, folded it into `orchestrator-agent` instead of leaving it as a second orchestrator — the same treatment the original consolidation gave the 3-document version of this workflow before the merge reintroduced it.
+
+- Deleted `solution-architecture-suite-orchestrator-agent.md`; its full procedure (suite in parallel → HLD → LLD → validation → Architecture/HLD/LLD Approval gate → development handoff → optional 5-page Confluence publish) is now `orchestrator-agent.md`'s "Architecture Suite / HLD / LLD workflow" section, reusing the same project-folder/naming-convention machinery as the discovery pipeline.
+- Deleted `solution-architecture-publish-agent.md` and `solution-architecture-publish-resume-agent.md` (direct-Confluence-write day-2/recovery helpers) and the `/architecture-publish` command that dispatched the resume agent — their entire reason for existing was working around gaps in the old sub-orchestrator's publish step. `orchestrator-agent` closes those gaps directly: a resume-safety check (read each document's `Status`/`Human approval status` before regenerating) replaces the resume agent, and `confluence-publish`'s existing search-before-create replaces the publish agent's existence-check. This also removes the last agent outside `orchestrator-agent` with direct Confluence MCP write access.
+- `/generate-architecture` is a thin dispatcher again, routing through `product-discovery/SKILL.md` §7b to `orchestrator-agent`, matching every other command.
+- `dev-orchestrator-agent.md`'s one reference to the old sub-orchestrator (where to route missing/stale design evidence) now points at `orchestrator-agent`.
+- **Explicitly not folded in this pass**: `dev-orchestrator-agent` (development, via `/develop`) stays a separate orchestrator — development is a distinct, larger surface, and the call was to consolidate the architecture bridge first. `.claude/CLAUDE.md`'s "Known scope boundary" section now describes two orchestrators, not three, and states this as an open follow-up rather than settled.
+
+See `.claude/agents/orchestrator-agent.md`'s "Architecture Suite / HLD / LLD workflow" and "Scope boundary" sections, and `.claude/skills/product-discovery/SKILL.md` §7b, for the authoritative procedure.
+
 ---
 
 ## Known limitations

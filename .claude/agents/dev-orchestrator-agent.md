@@ -27,7 +27,7 @@ Create `artifacts/development/<work-item-id>/` and keep all workflow artifacts t
 
 Read `config/project.yaml` for development limits and artifact root. If the block is absent, use the defaults stated below; never silently exceed a configured limit.
 
-Before creating development state, confirm the HLD and LLD metadata show `Human approval status: APPROVED` and that validation identifiers match the current source artifacts. Missing, draft, failed, or stale design evidence routes back to `solution-architecture-suite-orchestrator-agent`; development must not compensate by designing during planning.
+Before creating development state, confirm the HLD and LLD metadata show `Human approval status: APPROVED` and that validation identifiers match the current source artifacts. Missing, draft, failed, or stale design evidence routes back to `orchestrator-agent`'s Architecture Suite / HLD / LLD workflow (`/generate-architecture`); development must not compensate by designing during planning.
 
 ## Fast, safe stage sequence
 
