@@ -1,27 +1,27 @@
 ---
-description: Fetch the confirmed PRD (local file or Confluence), generate the ARCH-XXX solution architecture and the Solution Architecture / Security Architecture / Technology Stack Confluence-ready docs, run every validation and human-approval gate, then publish via confluence-publish.
+description: Resolve the currently-approved PRD from Confluence (by space + keyword + status, not a pinned page), sync it locally, generate the ARCH-XXX solution architecture and the Solution Architecture / Security Architecture / Technology Stack Confluence-ready docs, run every validation and human-approval gate, then publish via confluence-publish.
 argument-hint: "[workflow-id]"
 ---
 
 # Generate Architecture
 
-Runs the full chain: resolve PRD → generate `ARCH-XXX` → human-approve it → generate the three architecture docs → validate → human-approve (with a hard stop on any unacknowledged `[SECURITY REVIEW REQUIRED]`) → publish to Confluence.
+Runs the full chain: resolve the approved PRD → generate `ARCH-XXX` → human-approve it → generate the three architecture docs → validate → human-approve (with a hard stop on any unacknowledged `[SECURITY REVIEW REQUIRED]`) → publish to Confluence.
 
 Workflow ID given: `$ARGUMENTS` (optional — only needed if this project is also running the discovery-pipeline's multi-workflow tracking; a standalone PRD project can omit it).
 
-## Step 1 — Resolve the PRD
+## Step 1 — Resolve the approved PRD
 
-1. Check `config/project.yaml` → `confluence.prd_local_path`. If set and the file exists, read it.
-2. If not set, or the file doesn't exist, glob `docs/01-prd/prd-*.md`. Exactly one match → use it. Multiple → ask which. None → go to Step 1b.
-3. Confirm the resolved PRD's header shows **`Status: Confirmed`**. If it shows `Draft`, **STOP** — architecture must never be designed against an unconfirmed PRD. Report which open items are blocking confirmation and wait.
+Confluence, not the local file, is authoritative for *which* PRD is current — a re-versioned PRD publishes as a brand-new sibling page rather than an in-place edit (observed 2026-09-17: this exact product had two live PRD pages at once, an old `Status: Confirmed` v1.0 and a new `Status: Approved` v1.1, with the old one pending deletion). A pinned local file or a pinned page URL can silently go stale the moment that happens. So this step always re-resolves from Confluence rather than trusting the local file at face value.
 
-### Step 1b — Fetch from Confluence if no local PRD exists
-
-1. Read `confluence.prd_page_url` from `config/project.yaml`. If present, resolve it via the `confluence-doc-resolver` skill (URL form).
-2. If no URL is stored, resolve by name via the same skill (bare-name form), scoped to `confluence.site`.
-3. On `Resolved`, reconstruct the PRD in `prd-agent`'s standard template (the fetched Confluence body already follows it, minus the provenance banner — strip that banner, keep everything from `Problem Statement` through `Change Log`) and write it to `docs/01-prd/prd-<slug>.md`. This restores the repo as source of truth per the page's own provenance statement — do not leave the PRD living only in Confluence going forward.
-4. Update `config/project.yaml`'s `confluence.prd_local_path` to point at the newly written file.
-5. Re-run the `Status: Confirmed` check from Step 1.3 against the reconstructed file.
+1. Invoke `confluence-doc-resolver` with `Mode: keyword_status`:
+   - `ScopeSpace` = `confluence.space` from `config/project.yaml`
+   - `Keyword` = `confluence.prd_search_keyword` (default `"PRD"`)
+   - `RequiredStatus` = `confluence.prd_required_status` (a list — e.g. `["Approved", "Confirmed"]` — treat any listed value as qualifying, since different PRD-authoring runs in this repo have used different terminal-status wording)
+2. **`Resolved`** → continue to step 3.
+3. **`NotFound`** → **STOP**. Report exactly what was searched (space, keyword, required status) and what candidates (if any) were found with their actual status, so it's clear whether the blocker is "no PRD yet" or "PRD exists but isn't approved yet."
+4. **`AmbiguousMatches`** → **STOP**. Present every match (title, page ID, version, last-modified, extracted status) and ask which one is actually current — never guess by "newest," since a pending-deletion sibling page is exactly this shape of ambiguity and picking wrong means designing architecture against a superseded PRD.
+5. On `Resolved`, reconstruct the PRD in `prd-agent`'s standard template (the fetched Confluence body already follows it, minus the provenance banner — strip that banner, keep everything from `Problem Statement` through `Change Log`, and record the resolved page's version number in the local file's header). Write/overwrite it at `confluence.prd_local_path`, and note in the run report if this replaced a different-version local file (so a stale-PRD run doesn't pass silently).
+6. If `prd_search_keyword`/`prd_required_status` aren't set in `config/project.yaml` yet, ask for them once and offer to save them — don't default silently to a guessed keyword.
 
 ## Step 2 — Generate and approve the solution architecture (`ARCH-XXX`)
 
