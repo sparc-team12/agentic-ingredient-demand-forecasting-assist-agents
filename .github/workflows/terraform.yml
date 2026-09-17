@@ -104,7 +104,10 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: prod
+    # No `environment: prod` here on purpose — plan must run automatically on
+    # every push/PR without waiting for the prod Environment's Required
+    # reviewers gate. Only `apply` below references the environment, since
+    # that's the actual manual-approval point.
     permissions:
       id-token: write # required for OIDC — aws-actions/configure-aws-credentials exchanges this token for short-lived AWS creds
       contents: read
