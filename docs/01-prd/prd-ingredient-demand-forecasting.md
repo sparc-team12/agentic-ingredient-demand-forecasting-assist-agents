@@ -1,121 +1,186 @@
 # PRD: Agentic Ingredient Demand Forecasting Assistant
 
-**Version:** 1.0 | **Status:** Confirmed | **Last Updated:** 2026-09-17
+**Version:** 1.1 | **Status:** Approved | **Last Updated:** 2026-09-17
+
+> Synced from Confluence page "PRD - Agentic Ingredient Demand Forecasting Assistant" (id 5883461703, space `~712020c78d0510dbf248218881c00989970857`), resolved via `confluence-doc-resolver` Mode `keyword_status` (keyword "PRD", required status Approved). This supersedes the earlier v1.0 content (Confluence page id 5884510209, `Status: Confirmed`), which that page itself states is pending deletion as a duplicate.
 
 ## Problem Statement
 
-Kitchen managers at restaurants and hotels order ingredients by gut feel — there is no forecasting tool today. This causes stockouts on fast-moving ingredients and spoilage waste on perishables, with no visibility into which risk is actually worth acting on (i.e., its waste cost) or when to reorder given each supplier's lead time.
+Food cost is one of the largest controllable line items in a restaurant or hotel kitchen, and it leaks two symmetrical ways: ingredients bought too late cause stockouts and lost covers; ingredients bought too early spoil before use. The kitchen manager currently absorbs both risks through experience — memory of last week's covers, a walk through the walk-in, a general sense of supplier lead times. This holds until the menu changes, a special is added, or a supplier's lead time shifts, at which point the error surfaces as an 86'd dish or a bin of discarded produce. Existing inventory tools report stock on hand; they do not project what will be needed, and they attach no cost to the decision to wait. The gap this product fills is the step between knowing the stock level and knowing what to do about it.
 
 ## Goals
 
-- The kitchen manager trusts and acts on the flags the system produces. (Qualitative for v1 — no numeric waste/stockout reduction target is set; see OQ-2.)
+- A kitchen manager can answer, in under a minute and without a spreadsheet: what am I about to run out of and by when must I order it; what am I about to throw away and what is it worth; why is this item flagged; what happens if I change the menu.
+- Every spoilage warning carries a rupee figure so the manager can tell a small problem from a large one.
+- Every warning is interrogable in plain language, and the answer is consistent with the figure shown.
+- A menu change (special, banquet booking) can be tested against the risk picture before an order is placed.
+- Success is defined by the client as: the manager trusts the system's order-by dates enough to act on them without re-checking by hand. The product fails if it produces a list of warnings the manager still has to triage themselves.
 
 ## Non-Goals
 
-- Real POS or supplier-catalogue ingestion, including native pack sizes and unit conversion (v1 seed data is synthetic and pre-normalized to a single base unit per ingredient).
-- Multi-kitchen / multi-property support or data isolation.
-- User accounts or authentication of any kind.
-- Ongoing daily sales entry or any write path for new sales records after the initial seed load.
-- Formal accessibility conformance (WCAG target, audit, screen-reader or keyboard-navigation testing).
-- Per-user LLM quotas, spend dashboards, token metering, model fallback chains, or streaming responses.
-- Compliance controls of any kind. Note only, not specced: a production deployment ingesting real POS data would carry the operator's existing obligations for transaction and staffing data, and supplier pricing is typically commercially confidential.
+- Procurement integration — no connection to any supplier portal, EDI channel or ordering system. Orders are drafted as text only.
+- Live POS integration — no connection to Toast, Square or any till system. Sales history is a fixed, supplied dataset.
+- Ongoing data entry — no screens for logging daily sales, receiving deliveries, or recording stock counts.
+- Unit conversion — units are guaranteed consistent as supplied; the system does not convert between them.
+- Scenario persistence — what-if results are transient; no saving, naming or comparing of scenarios.
+- Accounts and permissions — single user, no login, no roles.
+- Multi-site operation — one kitchen only.
+- Mobile-specific interface — desktop or tablet browser is sufficient.
+- Compliance controls — no personal, customer or payment data is involved.
 
 ## Target Users
 
-- **kitchen-manager** — the person who makes the reorder call for one kitchen: reviews the dashboard, asks the chat agent why an ingredient is flagged, runs what-if scenarios, and sends the drafted purchase order to the supplier.
+- **kitchen-manager** — kitchen manager or head chef (primary user): reviews the tool two or three times a week, typically before placing orders. Comfortable with numbers, not with spreadsheets or dashboards requiring configuration. Needs a fast, decision-driven answer, not a monitoring screen.
+- **fb-manager** — F&B manager or owner (secondary user): interested in the aggregate — total waste exposure across the menu and which ingredients recur as problems. Uses the same dashboard, reads the top of it rather than the detail.
+
+## Input Data
+
+All data below is supplied to the system as a fixed dataset for this build; the system does not source, infer or estimate any of it.
+
+- **Sales history** — Daily units sold per dish, 12 weeks. Sufficient for day-of-week patterns and a recent trend.
+- **Menu** — 15–20 active dishes, stable over the period covered by the sales history.
+- **Recipes** — Ingredient quantities per serving, for every dish. 30–40 distinct ingredients across the menu.
+- **Ingredients** — Unit, unit cost, perishable flag, and shelf life in days (spoilage risk) per ingredient. Shelf life is given, never inferred.
+- **Current stock** — Quantity on hand and use-by date, per ingredient. The basis for spoilage assessment.
+- **Suppliers** — 3–5 suppliers, each with a lead time in days. Each ingredient maps to exactly one supplier.
+
+Unit consistency is guaranteed by the client: for any given ingredient, recipe quantities and supplier pricing are expressed in the same unit — no conversion is required.
 
 ## Requirements
 
 ### Must Have (v1)
 
-This list is a ceiling for v1, not a floor — nothing here is aspirational and nothing outside it is implied "if time permits."
+**Ingredient demand projection**
 
-- [ ] **REQ-001** — System generates 12 weeks of synthetic dish-level sales history at seed time; no path exists to import real historical sales data.
-- [ ] **REQ-002** — The generated seed history includes a weekend demand spike for at least one dish.
-- [ ] **REQ-003** — The generated seed history includes at least one perishable ingredient that reaches its spoilage condition within the forecast horizon.
-- [ ] **REQ-004** — The generated seed history includes at least one fast-moving ingredient that reaches a stockout condition within the forecast horizon.
-- [ ] **REQ-005** — The system stores a recipe/BOM mapping of 15–20 dishes to their component ingredients and quantities.
-- [ ] **REQ-006** — The system stores a supplier list of 3–5 suppliers, each with a lead time and a per-unit cost.
-- [ ] **REQ-007** — Each ingredient record stores unit, perishable flag, shelf_life_days, unit_cost, and supplier_id, all supplied at seed time; the system never infers or defaults these values.
-- [ ] **REQ-008** — Recipe ingredient quantities and the corresponding supplier's per-unit cost for a given ingredient are expressed in the same base unit.
-- [ ] **REQ-009** — The system uses a fixed, pinned "current date" constant, not the system clock, to separate historical records from the forward-looking forecast horizon.
-- [ ] **REQ-010** — The forecasting agent computes a per-ingredient, per-weekday baseline demand as the median of same-weekday historical observations, using at least six same-weekday samples.
-- [ ] **REQ-011** — The forecasting agent computes a trend adjustment by comparing the trailing 2-week mean of demand against the preceding 4-week mean.
-- [ ] **REQ-012** — The forecasting agent rolls up dish-level demand forecasts into ingredient-level projected consumption using the recipe/BOM mapping.
-- [ ] **REQ-013** — Forecast output is deterministic: re-running the forecast against unchanged seed data produces identical projected values every time.
-- [ ] **REQ-014** — The risk agent flags stockout risk for an ingredient when projected consumption will exhaust on-hand stock before the next feasible reorder can arrive.
-- [ ] **REQ-015** — The risk agent flags spoilage risk for a perishable ingredient when its projected time-to-consumption exceeds its shelf_life_days.
-- [ ] **REQ-016** — Each spoilage risk flag carries an estimated waste cost, computed from the projected unconsumed quantity and the ingredient's unit_cost.
-- [ ] **REQ-017** — The reorder-timing logic computes an "order by" date for each flagged ingredient, factoring in that ingredient's supplier lead time.
-- [ ] **REQ-018** — The chat agent answers a "why is [ingredient] flagged" question with the specific forecast values and risk basis behind that flag.
-- [ ] **REQ-019** — The chat agent accepts a what-if input that adds projected demand for a specified dish on a specified date.
-- [ ] **REQ-020** — Submitting a what-if scenario recomputes the risk table, waste-cost estimates, and order-by dates against an overlay, without modifying the underlying seed data.
-- [ ] **REQ-021** — What-if overlay state is held in memory only and resets when the page is reloaded.
-- [ ] **REQ-022** — The draft-PO agent generates a ready-to-send, text/email-style purchase-order line for a flagged ingredient, addressed to that ingredient's supplier, including item, quantity, and order-by date.
-- [ ] **REQ-023** — The dashboard lists all currently at-risk ingredients across the menu together with their waste-cost estimates.
-- [ ] **REQ-024** — The dashboard conveys risk severity using a label or icon in addition to color, so severity remains distinguishable when color is not perceptible (e.g., under projector or overhead-lit conditions). This is functional, not an accessibility nice-to-have — severity is the dashboard's primary signal.
+- [ ] **REQ-001** — The system projects demand for every ingredient over a forward horizon of at least 14 days.
+- [ ] **REQ-002** — Demand projections reflect day-of-week patterns (e.g., a Saturday is projected from Saturday history, not a flat daily average).
+- [ ] **REQ-003** — Demand projections weight recent trend movement more heavily than older history, rather than treating the full 12-week history as equally current.
+- [ ] **REQ-004** — Ingredient demand projection is computed by mapping each dish's projected demand through its recipe and summing across every dish containing that ingredient.
+
+**Stockout risk**
+
+- [ ] **REQ-005** — The system determines, for each ingredient, whether projected consumption will exhaust current stock within the forward horizon.
+- [ ] **REQ-006** — For each ingredient flagged at stockout risk, the system computes the date stock is expected to run out.
+- [ ] **REQ-007** — For each ingredient flagged at stockout risk, the system computes an order-by date, earlier than the projected stockout date by the ingredient's supplier lead time plus a safety margin.
+- [ ] **REQ-008** — For each ingredient flagged at stockout risk, the system computes a suggested order quantity covering projected consumption across the lead-time gap.
+- [ ] **REQ-009** — For each ingredient flagged at stockout risk, the system assigns a severity driven by how soon the order-by date falls.
+
+**Spoilage risk**
+
+- [ ] **REQ-010** — For each perishable ingredient, the system determines whether stock on hand is unlikely to be consumed before its use-by date, given projected consumption.
+- [ ] **REQ-011** — For each ingredient flagged at spoilage risk, the system computes an estimated waste cost in INR, equal to the unconsumed quantity valued at unit cost.
+- [ ] **REQ-012** — Spoilage warnings whose estimated waste cost falls below a configurable materiality threshold are suppressed from view.
+
+**Explanation on demand (Chat Agent)**
+
+- [ ] **REQ-013** — Any warning shown on the dashboard can be interrogated with a natural-language question posed to the Chat Agent (e.g., "why is this flagged?").
+- [ ] **REQ-014** — The explanation for a flagged ingredient names the contributing dishes and each one's relative contribution to the demand driving the flag.
+- [ ] **REQ-015** — The explanation for a flagged ingredient states the relevant dates driving the flag.
+- [ ] **REQ-016** — The explanation for a stockout-flagged ingredient states the supplier lead time that set its order-by date.
+
+**What-if scenarios (Chat Agent)**
+
+- [ ] **REQ-017** — The manager can pose a hypothetical demand change — a named dish, an additional or altered serving count, and a date or date range — in natural language to the Chat Agent, rather than through numeric form fields.
+- [ ] **REQ-018** — Posing a what-if scenario recomputes and surfaces which ingredients newly become at-risk as a result.
+- [ ] **REQ-019** — Posing a what-if scenario recomputes and surfaces which order-by dates move as a result.
+- [ ] **REQ-020** — Posing a what-if scenario recomputes and surfaces how total waste exposure changes as a result.
+- [ ] **REQ-036** — The explanation capability (REQ-013) and the what-if scenario capability (REQ-017) are both accessible through the same Chat Agent interface, not two disconnected inputs.
+
+**Purchase order drafting**
+
+- [ ] **REQ-021** — For any ingredient flagged at stockout risk, the system drafts a purchase order containing the supplier's name, the item, the suggested quantity, and the required delivery date.
+- [ ] **REQ-022** — The purchase order draft is presented as editable text that the manager can review and modify before sending through their own channel; it is never sent automatically.
+
+**Risk dashboard**
+
+- [ ] **REQ-023** — A single view lists every at-risk ingredient across the menu, ordered by severity.
+- [ ] **REQ-024** — The dashboard shows the risk type (stockout or spoilage) for each listed ingredient.
+- [ ] **REQ-025** — The dashboard shows the order-by date for each ingredient with stockout risk.
+- [ ] **REQ-026** — The dashboard shows the estimated waste cost for each ingredient with spoilage risk.
+- [ ] **REQ-027** — The dashboard shows a single aggregate figure for total waste exposure across the menu.
 
 ### Should Have
 
-None. The client explicitly scoped v1 as a fixed ceiling for a hackathon deadline; no phase-2 or "if time permits" items are carried inside this document. Deferred capabilities are recorded under Non-Goals above without requirement ids.
+None identified — the client specified the full requirement set above as required for v1 acceptance, with no should/could tier. The client's own framing (§9 of the intake document) treats this list as a ceiling, not a starting point: under time pressure, the six-step acceptance sequence (see Success Metrics) defines the minimum that must work.
 
 ### Could Have (later)
 
-None, for the same reason as above.
+None identified — see note under Should Have.
 
 ### Non-Functional
 
-- [ ] **REQ-025** — All demand forecasting, risk scoring, and waste-cost computation is performed by deterministic Python logic that makes no LLM calls.
-- [ ] **REQ-026** — The chat explanation, what-if intent parsing, and purchase-order draft text are generated by Claude Sonnet in a single-turn, tool-use pattern.
-- [ ] **REQ-027** — Chat conversation history is capped at the last 6 turns; older turns are dropped, not summarized.
-- [ ] **REQ-028** — The LLM is invoked only on explicit user action (a chat question, a what-if submission, or a PO draft request) — never on page load, polling, or a background schedule.
-- [ ] **REQ-029** — A response cache keyed on question text is checked before any LLM call; a cache hit returns the cached answer without calling the API.
-- [ ] **REQ-030** — Dashboard text remains legible under typical projector/overhead-lighting conditions — no small or low-contrast type on primary content.
-- [ ] **REQ-031** — The application requires no login or authentication in v1.
-- [ ] **REQ-032** — The application supports exactly one kitchen (single tenant); no multi-property data isolation is provided.
-- [ ] **REQ-033** — Seed data is loaded once at initialization; no UI or API path exists to add or edit sales records afterward.
-- [ ] **REQ-034** — The application's supported browser for v1 is the current version of Chrome; no other browser support is guaranteed.
+- [ ] **REQ-028** — Given the same input data, the system produces identical figures on every run (deterministic computation).
+- [ ] **REQ-029** — Every figure shown to the manager (stockout date, order-by date, order quantity, waste cost, aggregate exposure) is reconstructible as an explicit arithmetic trace back to the underlying input data.
+- [ ] **REQ-030** — Any generated explanation or scenario narrative describes figures already computed elsewhere in the system; it must never independently estimate a quantity that is not otherwise computed and shown.
+- [ ] **REQ-031** — An explanation returned for a given warning is numerically consistent with the figures shown for that same warning on the dashboard.
+- [ ] **REQ-032** — The risk dashboard loads and its risk figures are available in a time materially faster than the response time allowed for a natural-language question (i.e., fast enough to check in passing, not a multi-second wait).
+- [ ] **REQ-033** — A natural-language question (explanation or what-if scenario) returns a response within a few seconds.
+- [ ] **REQ-034** — Severity on the dashboard is communicated by a text label in addition to colour, so it remains legible on kitchen tablets, under overhead light, and on projected screens where colour distinctions collapse.
+- [ ] **REQ-035** — All monetary figures shown to the user (waste cost, aggregate exposure) are denominated in INR.
 
 ## Constraints
 
-- Hackathon deadline, hard, no slip: build window is approximately 24–36 hours from spec to demo. An incomplete build at the deadline scores as incomplete.
-- Explicit build phase: code freeze at roughly 70% of elapsed build time; remaining time is reserved for demo rehearsal and a recorded fallback walkthrough of the complete flow.
-- No infrastructure budget: local SQLite, local Streamlit, no hosting. Only cost incurred is Anthropic API usage at the volume described under Non-Functional.
-- Client-named technology constraints, recorded as stated (not expanded into architecture, which is a later agent's job): Python for the deterministic forecasting/risk/waste-cost layer, SQLite for storage, Streamlit for the web app, Claude Sonnet for the LLM layer.
-- LLM expected volume is low: invoked only on explicit user action, estimated ceiling of a few hundred requests for the demo period. No spend cap is enforced in v1.
+- **Fixed-deadline build.** This is a fixed-deadline delivery per the client's own requirements document (§9). Scope as written is a ceiling, not a starting point. Where time is short, the six-step acceptance sequence (see Success Metrics) defines what must work; anything not serving those six steps should be cut rather than partially built.
+- Supplier lead times are treated as fixed, an accepted simplification — lead-time variability is explicitly not modelled, even though the client notes a late delivery against a tight order-by date is exactly the failure this product exists to prevent.
+- The menu is assumed stable across the 12-week period covered by the sales history.
+- The projection is expected to be directionally useful, not precise to the gram; value lies in flagging the right ingredients with the right urgency.
+- Platform: desktop or tablet browser only.
+- Single user, no login, no roles.
+- Data is supplied, not sourced — see Input Data for the full itemized breakdown per input. The build does not source, infer or estimate any of it.
+- Currency is INR throughout.
 
 ## Success Metrics
 
-- v1 success is defined qualitatively: the kitchen manager reviews the dashboard/chat output during the demo walkthrough and acts on at least one flag (e.g., accepts a reorder timing suggestion or sends a drafted PO). No numeric waste-reduction or stockout-reduction target is set for v1 (see OQ-2).
+A reviewer, working only from the interface, can complete the following sequence unaided (client acceptance criteria, §8 of the intake document):
+
+1. Open the dashboard — at-risk ingredients listed by severity, each with risk type, order-by date or waste cost, and a visible total waste exposure figure.
+2. Select a flagged perishable ingredient — a rupee waste estimate and the use-by date driving it.
+3. Ask why that ingredient is flagged — an answer naming the contributing dishes, the relevant dates, and the supplier lead time, consistent with the figures on screen.
+4. Select a flagged fast-moving ingredient — an order-by date earlier than the projected stockout date by at least the supplier's lead time.
+5. Pose a menu change in plain language — the risk table updates; at least one ingredient changes state or date as a result.
+6. Request a purchase order for a flagged item — a complete draft naming supplier, item, quantity and required date.
+
+Steps 3 and 5 are the ones that distinguish this product from a reorder report, per the client. A vague or inconsistent answer at either step fails acceptance regardless of how the dashboard looks.
+
+Stated qualitative signal of success: the manager acts on order-by dates without re-checking them by hand, rather than treating the dashboard as a list to triage.
 
 ## Glossary
 
-- **kitchen-manager** — the persona who reviews flags and makes the reorder call; the only user role in v1.
-- **dish** — a menu item with a fixed recipe.
-- **ingredient** — a raw stock item consumed by one or more dishes, tracked at the base-unit level.
-- **recipe/BOM mapping** — the bill-of-materials linking each dish to its component ingredients and the quantity of each required per serving.
-- **base unit** — the single unit of measure (e.g., kg, L, each) in which a given ingredient's recipe quantity and supplier unit_cost are both expressed; v1 has no unit conversion.
-- **shelf_life_days** — the number of days after receipt that a perishable ingredient remains usable.
-- **perishable** — a boolean ingredient attribute indicating it is subject to a spoilage risk check.
-- **stockout risk** — the flag raised when projected consumption of an ingredient will exhaust on-hand stock before the next feasible reorder can arrive.
-- **spoilage risk** — the flag raised when a perishable ingredient's projected time-to-consumption exceeds its shelf_life_days.
-- **waste cost** — the estimated monetary cost attached to a spoilage risk flag, computed from projected unconsumed quantity and unit_cost.
-- **lead time** — the number of days a supplier takes to deliver an ingredient after an order is placed.
-- **order-by date** — the latest date an order can be placed for a flagged ingredient and still arrive before it is needed, computed from the supplier's lead time.
-- **what-if scenario** — a user-supplied hypothetical (e.g., adding a dish on a date) used to recompute risk, waste-cost, and order-by dates against an in-memory overlay, without altering the seed/history data.
-- **overlay** — the temporary, in-memory recomputation state produced by a what-if scenario; it resets on reload and is never persisted.
-- **forecast horizon** — the forward-looking window, starting at the pinned current-date constant, over which demand and risk are projected.
-- **current-date constant** — the fixed, pinned date used in place of the system clock to separate historical seed records from the forecast horizon, making every run deterministic.
-- **draft purchase order (draft PO)** — the ready-to-send, text/email-style order line generated for a flagged ingredient's supplier; not an integration with a procurement system.
-- **risk severity** — the dashboard's primary signal distinguishing how urgent a flag is; conveyed via label/icon in addition to color.
+- **Ingredient** — a distinct raw material used in one or more dishes; the level at which demand, stock and risk are tracked (not the dish level).
+- **Dish** — a menu item composed of ingredients per its recipe.
+- **Recipe** — the mapping of ingredient quantities per serving for a given dish.
+- **Forward horizon** — the forward-looking window (minimum 14 days) over which demand is projected.
+- **Stockout risk** — an ingredient whose projected consumption is expected to exhaust current stock within the forward horizon.
+- **Order-by date** — the date by which an order must be placed for a stockout-risk ingredient, computed as the projected stockout date minus the supplier's lead time minus a safety margin.
+- **Safety margin** — additional buffer time added to a supplier's lead time when computing an order-by date. Value and configurability not yet defined — see OQ-1.
+- **Suggested order quantity** — the quantity recommended to order to cover projected consumption across the lead-time gap.
+- **Severity** — the urgency ranking assigned to a risk warning. Exact bands/thresholds not yet defined — see OQ-4, OQ-5.
+- **Spoilage risk** — a perishable ingredient's on-hand stock unlikely to be consumed before its use-by date, given projected consumption.
+- **Waste cost** — the estimated rupee value of stock expected to spoil, computed as unconsumed quantity × unit cost.
+- **Materiality threshold** — the configurable minimum waste cost below which a spoilage warning is suppressed from view. Value and owner not yet defined — see OQ-2.
+- **Total waste exposure** — the aggregate rupee figure summing waste cost across spoilage warnings shown on the dashboard.
+- **Risk dashboard** — the single view listing every at-risk ingredient, ordered by severity.
+- **Chat Agent** — the single conversational interface through which the manager both interrogates warnings in natural language (explanation) and poses what-if scenarios. One surface serves both capabilities; it is not two separate inputs.
+- **What-if scenario** — a hypothetical demand change (e.g., a special or banquet booking) posed in natural language, used to preview its effect on the risk picture without committing to it.
+- **Purchase order draft** — the editable, ready-to-send text artifact naming a supplier, item, quantity and required delivery date for a stockout-risk ingredient.
+- **Lead time** — the number of days a supplier takes to deliver an ingredient after an order is placed.
+- **Use-by date** — the date by which a specific batch of stock on hand must be consumed.
+- **Shelf life** — the number of days an ingredient remains usable from receipt, provided as input data and never inferred.
+- **Perishable ingredient** — an ingredient flagged with a shelf life, subject to spoilage-risk assessment.
 
 ## Open Questions
 
-- **OQ-1** — No response-time target has been set for dashboard load or chat/what-if answers; the client declined to set one rather than have a number invented. Blocks: no currently numbered requirement, but blocks adding any future latency/performance requirement until a target is given. Owner: client.
-- **OQ-2** — The current waste/stockout cost baseline is unquantified; the client declined to estimate one. Blocks: any future measurable-success requirement or numeric goal (see Success Metrics). Owner: client.
+- **OQ-1** — What is the safety margin (in days) added to supplier lead time when computing the order-by date — a fixed value, the same for every ingredient, or configurable per ingredient/supplier? No value or owner is stated in the client's requirements. (Blocks: REQ-007, REQ-009, REQ-019, REQ-021, REQ-025 | Owner: client)
+- **OQ-2** — What is the default value and unit (a rupee amount, or a percentage) for the configurable materiality threshold that suppresses spoilage warnings, and who is expected to set or adjust it? (Blocks: REQ-012 | Owner: client)
+- **OQ-3** — Does the "total waste exposure" aggregate figure include the value of spoilage warnings suppressed by the materiality threshold, or only the value of warnings actually displayed? (Blocks: REQ-027 | Owner: client)
+- **OQ-4** — What are the severity levels (how many bands, what labels) and the day-based thresholds that map "how soon the order-by date falls" onto each severity level for stockout risk? (Blocks: REQ-009, REQ-023, REQ-034 | Owner: client)
+- **OQ-5** — What determines severity for a spoilage-flagged ingredient (e.g., proximity to use-by date, or size of the waste cost), and how do stockout severity and spoilage severity rank against each other on the single, combined, severity-ordered dashboard? (Blocks: REQ-023, REQ-026 | Owner: client)
 
 ## Change Log
 
 | Version | Date | Added | Changed | Retired |
 |---|---|---|---|---|
-| 1.0 | 2026-09-17 | REQ-001–REQ-034 | — | — |
+| 1.0 | 2026-09-17 | REQ-001–REQ-035, OQ-1–OQ-5 | — | — |
+| 1.1 | 2026-09-17 | REQ-036 | REQ-013, REQ-017 (name Chat Agent explicitly) | — |
+
+Also in 1.1: added Glossary term "Chat Agent"; added top-level "Input Data" section (itemized breakdown of the six supplied inputs); consolidated the two data/unit-consistency bullets in Constraints into a pointer to Input Data; renamed "Explanation on demand" and "What-if scenarios" subsection headers to "(Chat Agent)" for traceability to the client's own FR-4 label. No ids retired.

@@ -11,7 +11,7 @@ You are a senior solution architect generating the top-level **Solution Architec
 ## Input contract
 - `artifacts/architecture/solution-architecture.md` (the `ARCH-XXX` artifact from `solution-architect-agent` — always required; this is your primary source of truth for the Solution Architecture diagram/narrative, and do not contradict it)
 - The PRD, whichever shape exists for this product:
-  - `docs/01-prd/prd-*.md` (`REQ-XXX` convention — must be `Status: Confirmed`), **or**
+  - `docs/01-prd/prd-*.md` (`REQ-XXX` convention — must show a terminal, signed-off status: `Confirmed` or `Approved`), **or**
   - `artifacts/research/requirements-baseline.md` + `artifacts/features/feature-specification.md` + `artifacts/stories/user-stories.md` (discovery-pipeline convention, `FEAT-XXX`/`US-XXX`)
 - `artifacts/estimation/estimation-cost-analysis.md` (if available, for the Child Pages list context)
 
