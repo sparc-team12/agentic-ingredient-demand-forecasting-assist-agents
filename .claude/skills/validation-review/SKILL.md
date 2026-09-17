@@ -22,6 +22,9 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
   - `artifacts/architecture/solution-architecture-overview.md` (narrative Confluence-page draft from `solution-architecture-overview-agent`)
   - `artifacts/architecture/security-architecture.md` (from `solution-security-architecture-agent`)
   - `artifacts/architecture/tech-stack.md` (from `solution-tech-stack-agent`)
+  - `artifacts/features/feature-epic-breakdown*.md` (Shape B Epic/Feature breakdown from `feature-analyst-agent` — source of `EPIC-`/`FEAT-` ids where this shape is used instead of `feature-specification.md`)
+  - a user-journeys document, if one exists (local or Confluence-sourced) — Shape B's flow/navigation source
+  - `artifacts/design/ui-ux-specification*.md` (Shape B UI/UX draft from `uiux-designer-agent`, tracing to `EPIC-`/`FEAT-`/`REQ-` instead of `FEAT-`/`US-`)
 
 ## Checklist
 
@@ -29,14 +32,17 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Feature vs. user-story alignment — every `FEAT-XXX` has at least one story, every story's `Traces to` resolves to a real feature ID.
 - Architecture vs. feature requirements — every `ARCH-XXX` traces to a real feature/requirement; no feature requiring persistence/integration/auth left unaddressed by any `ARCH-XXX`.
 - Solution Architecture Overview / Security Architecture / Tech Stack vs. `ARCH-XXX` — every component/technology named in these three narrative pages traces to an actual `ARCH-XXX` entry; flag any page that names a technology or component the engineering architecture artifact never mentions.
+- Feature/Epic breakdown vs. `ARCH-XXX` (Shape B only) — every `EPIC-XXX`/`FEAT-XXX` in `feature-epic-breakdown.md` traces to real `REQ-XXX` ids in the PRD; if `solution-architecture.md` already exists, spot-check that no `ARCH-XXX` component lacks a corresponding feature that would need it (an architecture component with nothing driving it is itself a finding).
 - Security Architecture vs. risk register — every control in `security-architecture.md` has a corresponding `RISK-XXX` (or is itself the mitigation named on one); every security-relevant `RISK-XXX` has a corresponding control.
 - UI/UX vs. user journeys — every `UI-XXX` traces to a real story/feature; no story implying a screen that has no `UI-XXX`.
+- UI/UX vs. journeys/Epic-Feature breakdown (Shape B) — every screen a journeys document proposed is either confirmed or explicitly renamed by a `UI-XXX` entry, not silently dropped; every `UI-XXX`'s `EPIC-`/`FEAT-` trace resolves to a real id in the breakdown.
 - Estimate vs. architecture — every `EST-XXX` traces to a real `FEAT-XXX`/`ARCH-XXX`; no architecture component left unestimated.
 - Risks vs. architecture/features — spot-check that high-impact architecture assumptions and integration points have a corresponding `RISK-XXX`.
 - Risk vs. test strategy — every `RISK-XXX` rated Critical or High has at least one `TS-XXX` mapping it to a required test depth; flag any that don't.
 
 ### Completeness
 - Missing requirements — anything features/stories imply that isn't a `REQ-` in the PRD (or, failing that, the requirements baseline).
+- Uncovered requirements (Shape B) — any `REQ-XXX` not listed in `feature-epic-breakdown.md`'s Requirement Coverage Map, or listed there but not actually addressed by any `FEAT-XXX`'s content.
 - Missing acceptance criteria — any `US-XXX` without testable acceptance criteria.
 - Missing error/empty/loading states — any `UI-XXX` flow without them noted.
 - Missing non-functional requirements — features with no NFR coverage at all.
