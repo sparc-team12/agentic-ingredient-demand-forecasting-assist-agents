@@ -17,12 +17,17 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
   - `artifacts/design/ui-ux-specification.md`
   - `artifacts/estimation/estimation-cost-analysis.md`
   - `artifacts/risk/risk-register.md`
+  - `artifacts/architecture/solution-architecture-overview.md` (narrative Confluence-page draft from `solution-architecture-overview-agent`)
+  - `artifacts/architecture/security-architecture.md` (from `solution-security-architecture-agent`)
+  - `artifacts/architecture/tech-stack.md` (from `solution-tech-stack-agent`)
 
 ## Checklist
 
 ### Consistency
 - Feature vs. user-story alignment — every `FEAT-XXX` has at least one story, every story's `Traces to` resolves to a real feature ID.
 - Architecture vs. feature requirements — every `ARCH-XXX` traces to a real feature/requirement; no feature requiring persistence/integration/auth left unaddressed by any `ARCH-XXX`.
+- Solution Architecture Overview / Security Architecture / Tech Stack vs. `ARCH-XXX` — every component/technology named in these three narrative pages traces to an actual `ARCH-XXX` entry; flag any page that names a technology or component the engineering architecture artifact never mentions.
+- Security Architecture vs. risk register — every control in `security-architecture.md` has a corresponding `RISK-XXX` (or is itself the mitigation named on one); every security-relevant `RISK-XXX` has a corresponding control.
 - UI/UX vs. user journeys — every `UI-XXX` traces to a real story/feature; no story implying a screen that has no `UI-XXX`.
 - Estimate vs. architecture — every `EST-XXX` traces to a real `FEAT-XXX`/`ARCH-XXX`; no architecture component left unestimated.
 - Risks vs. architecture/features — spot-check that high-impact architecture assumptions and integration points have a corresponding `RISK-XXX`.
@@ -45,6 +50,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Security gaps — authN/authZ, data-at-rest/in-transit, and API boundary items from architecture that have no corresponding risk entry.
 - Privacy concerns — any personal/sensitive data handling implied by requirements/features with no privacy risk entry.
 - Compliance review requirements — any `RISK-XXX` making a compliance claim without `Requires legal/security review: yes` when evidence is thin.
+- Every `[SECURITY REVIEW REQUIRED]` marker in `security-architecture.md` — surface each one individually as a High-severity finding; these route through the Architecture Suite human-approval gate (`solution-architecture-suite-orchestrator-agent`), not this checklist alone.
 - Testability — acceptance criteria that aren't actually verifiable as written.
 - Operational readiness — architecture's observability/availability notes actually cover what the NFRs demand.
 
