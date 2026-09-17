@@ -7,4 +7,4 @@ Load and follow `.claude/skills/product-discovery/SKILL.md`, mode **SINGLE_AGENT
 
 Workflow ID given: `$ARGUMENTS`
 
-Read `workflow/status.json`. If `feature_analyst` is not `COMPLETED`, stop and explain what's missing. Otherwise dispatch `solution-architect-agent` (`.claude/agents/solution-architect-agent.md`) using the requirements baseline, feature specification, and user stories if available (note the gap if stories don't exist yet). Report the result, and flag any irreversible technology decision that needs explicit human sign-off.
+Read `workflow/status.json`. Require Gate 1 (`REQUIREMENTS_APPROVAL`) to be `APPROVED` — if not, stop and explain what's pending. Otherwise dispatch `solution-architect-agent` (`.claude/agents/solution-architect-agent.md`) using the approved PRD and requirements baseline (this agent needs only the PRD; in the full pipeline it runs in parallel with `feature-analyst-agent`, so a feature specification or user stories won't exist yet — that's expected, not a gap to report). Report the result, and flag any irreversible technology decision that needs explicit human sign-off.

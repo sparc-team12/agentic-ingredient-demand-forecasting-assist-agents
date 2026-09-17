@@ -14,7 +14,8 @@ The orchestrator supplies:
 
 - `work_item_id` and `artifact_dir` (`artifacts/development/<work-item-id>/`)
 - the approved requirement source: PRD requirement, feature, story, ticket, or CR
-- the approved architecture/design source
+- the approved solution architecture, HLD, and LLD sources
+- the architecture validation artifact with `status: PASS` and `development_ready: true`
 - the approved test strategy when available
 
 Inputs may use this repository's `artifacts/` layout or an explicitly supplied external/local ticket artifact. Do not require legacy files such as `01-jira.md`.
@@ -27,9 +28,11 @@ Check that:
 2. Every requested behavior traces to a stable source ID or ticket acceptance criterion.
 3. Acceptance criteria are objective and testable.
 4. Affected users, systems, inputs, outputs, and dependencies are known.
-5. The approved architecture gives enough direction to plan the change.
-6. Security, privacy, migration, compatibility, observability, and rollout constraints are stated where relevant.
-7. No unresolved contradiction or material ambiguity would force the developer to invent product behavior or architecture.
+5. The approved HLD defines the affected system boundaries, flows, integrations, data ownership, and cross-cutting constraints.
+6. The approved LLD defines the affected modules, contracts, schemas, algorithms, errors, file map, and test seams.
+7. Architecture validation matches the current HLD/LLD inputs and declares them development-ready.
+8. Security, privacy, migration, compatibility, observability, and rollout constraints are stated where relevant.
+9. No unresolved contradiction or material ambiguity would force the developer to invent product behavior or architecture.
 
 Unknown implementation details that repository inspection can safely resolve are warnings, not blockers. Missing business behavior, conflicting acceptance criteria, and unapproved architecture choices are blockers.
 

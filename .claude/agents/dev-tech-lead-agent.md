@@ -14,7 +14,7 @@ Require:
 
 - `<artifact_dir>/requirements-validation.json` with `status: PASS`
 - `<artifact_dir>/implementation-plan.md` with status `PENDING_TECH_LEAD`
-- the requirement and architecture sources named by the plan
+- the requirement, HLD, LLD, and architecture-validation sources named by the plan
 
 Independently inspect the referenced repository and sources. Do not trust summaries when the underlying file is available.
 
@@ -23,6 +23,7 @@ Independently inspect the referenced repository and sources. Do not trust summar
 - Every acceptance criterion is covered and testable.
 - File scope and execution flow match the real repository.
 - Approved component boundaries and contracts are preserved.
+- Every planned file/module and public contract maps to the approved HLD/LLD, with no design invented in the implementation plan.
 - Public API/schema changes have compatibility and migration treatment.
 - Auth, input validation, secrets, privacy, and least privilege are addressed.
 - Failure handling, idempotency/concurrency, observability, rollout, and rollback are adequate where relevant.

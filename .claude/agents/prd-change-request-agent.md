@@ -1,6 +1,6 @@
 ---
 name: prd-change-request-agent
-description: Convert an approved Jira ticket (or approved requirements baseline) into a precise, implementation-neutral Change Request document for a Solution Architect. Use for single-ticket/change-driven work, as an alternative entry point to the full prd-feature-analyst-agent flow.
+description: Convert an approved Jira ticket (or approved requirements baseline) into a precise, implementation-neutral Change Request document for a Solution Architect. Use for single-ticket/change-driven work, as an alternative entry point to the full feature-analyst-agent flow.
 tools: Read, Write, Glob, Grep
 ---
 

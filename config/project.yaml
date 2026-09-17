@@ -12,9 +12,13 @@ confluence:
   # space the confirmed PRD (5884510209) and the "Product Requirement" draft (5843681284)
   # both live in.
   space: "~712020c78d0510dbf248218881c00989970857"
-  # "Product Requirement" draft page (title as of 2026-09-17; currently empty).
-  # Architecture Suite pages (Solution Architecture, Security Architecture,
-  # Technology Stack) publish as children of this page.
+  # Shared space root under which EVERY project this repo tracks gets its own
+  # Confluence folder (a page acting as a folder), one per project, created/resolved
+  # by the orchestrator at Gate 0b (see .claude/agents/orchestrator-agent.md and
+  # .claude/skills/product-discovery/SKILL.md §1a) — never a single project's own
+  # page directly. Currently points at the "Product Requirement" draft page
+  # (title as of 2026-09-17; currently empty) pending that per-project folder
+  # actually being created for the demo project below.
   parent_page: "5843681284"
   # Enabled 2026-09-17 so solution-architecture-publish-agent can create the three
   # architecture pages once they're APPROVED.
@@ -31,10 +35,25 @@ confluence:
   # "PRD - Agentic Ingredient Demand Forecasting Assistant" id 5883461703
   # Status:Approved, with the old page pending deletion) -- a pinned URL would have
   # silently kept reading the stale v1.0 page. See confluence-doc-resolver's
-  # `keyword_status` mode.
+  # `keyword_status` mode. (Once this project's Gate 0b folder is created, its
+  # ID/URL belongs in workflow/status.json's `projects` registry, not here.)
   prd_search_keyword: "PRD"
   prd_required_status: ["Approved", "Confirmed"]
   prd_local_path: "docs/01-prd/prd-ingredient-demand-forecasting.md"
+
+jira:
+  enabled: false
+  # Same Atlassian tenant as confluence.site above — confirm the target project before enabling.
+  site: "https://experionglobal.atlassian.net"
+  # Suggested default only — the orchestrator always confirms the actual destination
+  # project with the human at Gate 0b (see orchestrator-agent.md's "Project
+  # identification and publish destinations") before creating anything in Jira at
+  # Gate 3. Setting this does not skip that confirmation. e.g. "ING".
+  project_key: ""
+  # Optional: force a specific US-XXX -> issue-type mapping instead of letting the
+  # orchestrator propose one from getJiraProjectIssueTypesMetadata at Gate 3. Leave
+  # empty to always ask.
+  issue_type_mapping: {}
 
 workflow:
   require_human_approval: true
@@ -60,6 +79,9 @@ quality:
 development:
   enabled: true
   artifacts_root: "artifacts/development"
+  require_approved_hld: true
+  require_approved_lld: true
+  require_architecture_validation: true
   max_plan_revision_rounds: 2
   max_code_review_rework_rounds: 3
   terminal_status: "READY_FOR_QA"

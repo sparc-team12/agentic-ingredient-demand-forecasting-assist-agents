@@ -7,6 +7,6 @@ Load and follow `.claude/skills/product-discovery/SKILL.md`, mode **SINGLE_AGENT
 
 Requirement/input given: `$ARGUMENTS`
 
-Note: in the full `/product-plan` workflow, `research_requirements` is normally dispatched by `prd_agent` itself, mid-interview, not run standalone first — Gate 1 gates on `prd_agent`'s `Confirmed` PRD, not on this command's output directly. Use this command for an ad hoc research pass (e.g. `prd_agent` requesting it, or a human wanting research without a full interview).
+Note: in the full `/product-plan` workflow, `research_requirements` is normally dispatched by the **orchestrator** whenever `prd_agent` flags a specific research gap mid-interview — `prd_agent` never dispatches it itself — and Gate 1 gates on `prd_agent`'s `Confirmed` PRD, not on this command's output directly. Use this command for an ad hoc research pass (e.g. a human wanting research without a full interview) outside that flagged-gap loop.
 
 If no existing workflow matches this input, create a new workflow ID first. Dispatch `research-requirements-agent` (`.claude/agents/research-requirements-agent.md`) and report its output — do not run Gate 1 from this command, since that gate belongs to the `Confirmed` PRD, not to a standalone research pass. Do not dispatch any other specialist from this command.

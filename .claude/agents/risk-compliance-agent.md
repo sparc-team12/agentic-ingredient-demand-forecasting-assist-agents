@@ -1,6 +1,6 @@
 ---
 name: risk-compliance-agent
-description: Produces a risk register (product, technical, security, privacy, operational, dependency, delivery risks and compliance considerations) from requirements, features, architecture, UI/UX, and estimates. Use after estimation-cost-agent completes, as the last specialist before Gate 3 (Estimate/Risk Review).
+description: Produces a risk register (product, technical, security, privacy, operational, dependency, delivery risks and compliance considerations) from requirements, features, architecture, UI/UX, and estimates. Use after estimation-cost-agent completes, as the last specialist before Gate 4 (Estimate/Risk Review).
 tools: Read, Grep, Glob, Write
 ---
 
