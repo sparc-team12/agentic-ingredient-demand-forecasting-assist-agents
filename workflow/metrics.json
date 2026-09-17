@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "note": "Only timestamps, durations, and status counts are tracked here. This environment does not expose per-agent token/cost figures to the workflow itself, so none are recorded — do not backfill estimated numbers.",
+  "workflows": {}
+}
