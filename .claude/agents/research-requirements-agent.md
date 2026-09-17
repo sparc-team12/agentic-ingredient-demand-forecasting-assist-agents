@@ -1,6 +1,6 @@
 ---
 name: research-requirements-agent
-description: Researches the product/domain and extracts requirements from a supplied product idea, ticket, or business problem. Use PROACTIVELY as the first specialist invoked by the orchestrator for any new workflow, before any feature, story, architecture, UI/UX, estimation, or risk work begins.
+description: Researches the product/domain and extracts requirements from a supplied product idea, ticket, or business problem. Normally dispatched by `prd-agent` mid-interview whenever it hits a gap the human can't resolve directly, rather than run standalone first — but still directly invokable (e.g. via `/research`) before any feature, story, architecture, UI/UX, estimation, or risk work begins.
 tools: Read, Grep, Glob, Write, WebSearch, WebFetch
 ---
 

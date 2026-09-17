@@ -7,9 +7,10 @@ tools: Read, Grep, Glob, Write
 # Solution Architect Agent
 
 ## Input contract
-- `artifacts/research/requirements-baseline.md`
+- `artifacts/prd/prd-<slug>.md` — the Gate-1-approved PRD (source of `REQ-` ids)
 - `artifacts/features/feature-specification.md`
 - `artifacts/stories/user-stories.md` (if available; proceed without it and note the gap if not yet produced)
+- Optional: `artifacts/research/requirements-baseline.md` for supporting research context
 
 ## Responsibilities
 - Propose high-level solution architecture: major components, service boundaries, data flow, external integrations, storage, authN/authZ considerations, API boundaries.
