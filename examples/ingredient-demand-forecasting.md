@@ -24,17 +24,22 @@ Build an agentic assistant that helps a multi-location food-service operator (re
 ```text
 1. Start Claude Code in this repository.
 2. /product-plan examples/ingredient-demand-forecasting.md
-3. research-requirements-agent runs -> artifacts/research/requirements-baseline.md + open-questions.md
-4. Gate 1 (Requirements Approval) appears — respond APPROVE, REQUEST_CHANGES, PROVIDE_CLARIFICATION, or STOP
-5. feature-analyst-agent runs, then user-story-analyst-agent / solution-architect-agent / uiux-designer-agent run in parallel
-6. Gate 2 (Solution Review) appears
-7. estimation-cost-agent runs, then risk-compliance-agent runs
-8. Gate 3 (Estimate/Risk Review) appears
-9. Validation runs (/review is also available standalone)
-10. /prd assembles the final PRD with traceability matrix
-11. Gate 4 (Final PRD Approval) — requires the literal response APPROVE_AND_PUBLISH
-12. /publish runs Gate 5 (Confluence Publication) — requires explicit per-page confirmation
-13. workflow/status.json records the published page IDs/URLs
+3. Gate 0b (Project Identification) appears — say new or continuation; if new, give the orchestrator the Confluence folder name (it never guesses one), which it creates under confluence.parent_page; separately, it also asks you to confirm which Jira project user stories should be created in (offering config/project.yaml's jira.project_key as a default only if set, never assuming it) — both get recorded in workflow/status.json's projects registry
+4. prd-agent interviews you; if it hits a gap it can't resolve from your answers, it flags it to the orchestrator, which runs research-requirements-agent narrowly (-> artifacts/research/requirements-baseline.md + open-questions.md) and hands the result back
+5. Gate 1 (Requirements Approval) appears — respond APPROVE, REQUEST_CHANGES, PROVIDE_CLARIFICATION, or STOP; approval also publishes "PRD - <Project Name>" to Confluence, into this project's folder (own confirmation)
+6. feature-analyst-agent and solution-architect-agent run in parallel, then uiux-designer-agent runs once the feature spec exists
+7. Gate 2 (Feature/Architecture/UI-UX Review) appears; approving offers to publish each of the three to Confluence individually, into the same project folder, titled "Feature Specification - <Project Name>" / "Solution Architecture - <Project Name>" / "Design Document - <Project Name>"
+8. user-story-analyst-agent runs, given the approved PRD, feature spec, architecture, and UI/UX spec
+9. Gate 3 (User Stories Review) appears, including the proposed US-XXX -> Jira issue-type mapping; approving publishes the stories to Jira (not Confluence)
+10. estimation-cost-agent runs (using the user stories as input too), then risk-compliance-agent runs
+11. Gate 4 (Estimate/Risk Review) appears; approving offers to publish "Estimate and Cost - <Project Name>" and "Risk Register - <Project Name>" to Confluence individually
+12. test-strategy-agent runs last (PRD + feature spec + stories + architecture + UI/UX spec + risk register all exist by now)
+13. Gate 5 (Test Strategy Review) appears; approving offers to publish "Test Strategy - <Project Name>" to Confluence
+14. Validation runs (/review is also available standalone)
+15. /prd assembles the final PRD with traceability matrix (including each story's Jira link)
+16. Gate 6 (Final PRD Approval) — requires the literal response APPROVE_AND_PUBLISH
+17. /publish runs Gate 7 (Confluence Publication) — updates "PRD - <Project Name>" in place with the full package rather than creating a new page — requires explicit per-page confirmation
+18. workflow/status.json records the published Confluence page IDs/URLs and Jira issue keys/URLs
 ```
 
 Use `/status <workflow-id>` at any point to see where the workflow stands.

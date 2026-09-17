@@ -1,11 +1,11 @@
 ---
 name: validation-review
-description: Lightweight, on-demand validation pass over product-discovery artifacts across four dimensions — consistency, completeness, feasibility, quality/security. Produces findings only, never edits an already human-approved artifact. Invoked standalone by /review and by the product-discovery skill before Gate 4 (Final PRD Approval). Does not stand up a permanent reviewer-agent hierarchy — it's a short-lived pass performed by whichever session invokes it.
+description: Lightweight, on-demand validation pass over product-discovery artifacts across four dimensions — consistency, completeness, feasibility, quality/security. Produces findings only, never edits an already human-approved artifact. Invoked standalone by /review and by the product-discovery skill before Gate 6 (Final PRD Approval). Does not stand up a permanent reviewer-agent hierarchy — it's a short-lived pass performed by whichever session invokes it.
 ---
 
 # Validation & Review
 
-Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill exists so the four validation dimensions have one canonical checklist, reusable from `/review` (ad hoc, any time) and from `.claude/skills/product-discovery/SKILL.md` (mandatory, right before Gate 4).
+This skill exists so the four validation dimensions have one canonical checklist, reusable from `/review` (ad hoc, any time) and from `.claude/skills/product-discovery/SKILL.md` (mandatory, right before Gate 6).
 
 ## Input
 
@@ -60,7 +60,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Security gaps — authN/authZ, data-at-rest/in-transit, and API boundary items from architecture that have no corresponding risk entry.
 - Privacy concerns — any personal/sensitive data handling implied by requirements/features with no privacy risk entry.
 - Compliance review requirements — any `RISK-XXX` making a compliance claim without `Requires legal/security review: yes` when evidence is thin.
-- Every `[SECURITY REVIEW REQUIRED]` marker in `security-architecture.md` — surface each one individually as a High-severity finding; these route through the Architecture Suite human-approval gate (`solution-architecture-suite-orchestrator-agent`), not this checklist alone.
+- Every `[SECURITY REVIEW REQUIRED]` marker in `security-architecture.md` — surface each one individually as a High-severity finding; these route through the Architecture Suite Approval gate (owned by `orchestrator-agent`, see `.claude/agents/orchestrator-agent.md`), not this checklist alone.
 - Testability — acceptance criteria that aren't actually verifiable as written.
 - Operational readiness — architecture's observability/availability notes actually cover what the NFRs demand.
 

@@ -1,6 +1,6 @@
 ---
 name: test-strategy-agent
-description: Produces the test strategy document — the guideline downstream test planning, test case generation, and test automation agents work from — using the approved PRD, feature spec, user stories, architecture, UI/UX spec, and risk register. Use after Gate 3 (Estimate/Risk Review) is approved, alongside PRD assembly, before Gate 4. Asks the human for QA-specific context (tooling, environments, regulatory testing obligations, team maturity) that no upstream artifact captures.
+description: Produces the test strategy document — the guideline downstream test planning, test case generation, and test automation agents work from — using the approved PRD, feature spec, user stories, architecture, UI/UX spec, and risk register. Use last in the pipeline, after Gate 4 (Estimate/Risk Review) is approved, reviewed at Gate 5, before final PRD assembly. Asks the human for QA-specific context (tooling, environments, regulatory testing obligations, team maturity) that no upstream artifact captures.
 tools: Read, Grep, Glob, Write, AskUserQuestion
 ---
 
@@ -12,7 +12,7 @@ tools: Read, Grep, Glob, Write, AskUserQuestion
 - `artifacts/stories/user-stories.md`
 - `artifacts/architecture/solution-architecture.md`
 - `artifacts/design/ui-ux-specification.md`
-- `artifacts/risk/risk-register.md` — required. If Gate 3 has not recorded `APPROVED` for this workflow, say so and stop rather than proceeding; a test strategy written against an unapproved risk register will need redoing the moment risk severities change.
+- `artifacts/risk/risk-register.md` — required. If Gate 4 has not recorded `APPROVED` for this workflow, say so and stop rather than proceeding; a test strategy written against an unapproved risk register will need redoing the moment risk severities change.
 - Optional: `artifacts/estimation/estimation-cost-analysis.md`, for effort-awareness when recommending automation scope.
 - Human input, gathered directly (see below) — this agent does not run purely off artifacts.
 
@@ -53,7 +53,7 @@ Write `artifacts/test-strategy/test-strategy.md` (create the directory if needed
 Workflow ID: <given by orchestrator>
 Agent: test_strategy
 Created: <timestamp>
-Status: DRAFT — pending Gate 4 (presented alongside the final PRD)
+Status: DRAFT — pending Gate 5 (Test Strategy Review)
 Source artifacts: <PRD, feature spec, user stories, architecture, UI/UX spec, risk register — paths and versions>
 Human input gathered: <topics asked, what was answered/skipped>
 Human approval status: PENDING

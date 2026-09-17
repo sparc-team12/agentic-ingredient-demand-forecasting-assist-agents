@@ -1,22 +1,22 @@
 ---
 name: confluence-publish
-description: Confluence publication procedure via the Atlassian MCP integration — verifies the connector, confirms site/space/parent page, searches before creating, detects CREATE vs UPDATE, flags destructive changes, and requires explicit human confirmation before any write. Invoked by /publish and by product-discovery's Gate 5. Never overwrites an existing page without approval for that specific page, and never fabricates a "connected" status.
+description: Confluence publication procedure via the Atlassian MCP integration — verifies the connector, confirms site/space/parent page, searches before creating, detects CREATE vs UPDATE, flags destructive changes, and requires explicit human confirmation before any write. Invoked by /publish and by product-discovery at every publish point in the pipeline (Gates 1, 2, 4, 5, and 7). Never overwrites an existing page without approval for that specific page, and never fabricates a "connected" status.
 ---
 
 # Confluence Publication
 
-Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §13–14. This skill is the only place Confluence-write logic lives — `.claude/skills/product-discovery/SKILL.md` calls into it at Gate 5 rather than duplicating it.
+This skill is the only place Confluence-write logic lives — `.claude/skills/product-discovery/SKILL.md` calls into it after Gate 1 (the PRD), after Gate 2 (feature/architecture/UI-UX, one call per document), after Gate 4 (estimation/risk, one call per document), after Gate 5 (test strategy), at the Architecture Suite Approval gate, and at Gate 7 (the final assembled package) — never duplicating this logic elsewhere. Only `orchestrator-agent` (`.claude/agents/orchestrator-agent.md`) invokes this skill — it is the sole agent with Confluence/Jira MCP access in this pipeline. (User stories publish to **Jira**, not here — see `orchestrator-agent.md`'s "Publishing user stories to Jira".)
 
 ## Input
 
 | Parameter | Required | Description |
 |---|---|---|
-| `PageSet` | No | The set of pages to publish, as `{title, body}` pairs. Defaults to the ten PRD section pages below if omitted, for backward compatibility with the PRD flow. A caller publishing a different document set (e.g. `solution-architecture-suite-orchestrator-agent`'s three architecture pages) passes its own `PageSet` instead — the search-before-create, CREATE-vs-UPDATE, and Gate 5 confirmation steps below apply identically regardless of which set is passed. |
-| `ParentPage` | No | Overrides `confluence.parent_page` from `config/project.yaml` for this call, if the caller's document set lives under a different parent (e.g. an "Architecture" page tree instead of the PRD tree). |
+| `PageSet` | Yes | The set of pages to publish this call, as `{title, body}` pairs, already titled per the `<Document Type> - <Project Name>` naming convention (`orchestrator-agent.md`). Usually one or a handful of pages per call (a single PRD page after Gate 1, one document after Gate 2/4/5, the three Architecture Suite documents, or the final `final-prd.md` content at Gate 7) — never a fixed default set, since which documents exist depends entirely on which gates this workflow has cleared so far. |
+| `ParentPage` | Yes | The Confluence page ID of **this workflow's resolved project folder** (`orchestrator-agent.md`'s "Project identification and Confluence folder", `product-discovery/SKILL.md` §1a) — never `confluence.parent_page` directly. If the caller hasn't resolved a project folder yet, refuse and say so; do not fall back to publishing under the space root. |
 
 ## Precondition (caller's responsibility, verify before invoking)
 
-The caller must have already recorded an explicit human-approval decision for every page in `PageSet` before invoking this skill — this skill performs no approval logic of its own, only publication mechanics. For the PRD flow, that is `workflow/status.json` Gate 4 (`FINAL_PRD_APPROVAL`) with the literal decision `APPROVE_AND_PUBLISH`. For any other `PageSet` (e.g. the architecture suite), the calling orchestrator defines and records its own equivalent gate (see `solution-architecture-suite-orchestrator-agent`'s Human gate) and must state which gate was cleared when invoking this skill. If no such gate decision is stated, refuse and ask which approval covers this call.
+The caller must have already recorded an explicit human-approval decision for every page in `PageSet` before invoking this skill — this skill performs no approval logic of its own, only publication mechanics. For the final-package call, that is `workflow/status.json` Gate 6 (`FINAL_PRD_APPROVAL`) with the literal decision `APPROVE_AND_PUBLISH`. For every other call (the PRD after Gate 1, a document after Gate 2/4/5, or the Architecture Suite), `orchestrator-agent` states which gate was cleared when invoking this skill — a content-review gate clearing is what authorizes *attempting* the publish; this skill's own Step 4 confirmation is what actually authorizes the write. If no gate decision is stated, refuse and ask which approval covers this call.
 
 ## Step 1 — Verify the MCP connector (don't assume)
 
@@ -29,37 +29,37 @@ Do not assume a specific MCP server or tool name. In this repository's environme
   then have them run `/mcp` and complete authentication.
 - Do not claim the connection works until a real read call (e.g. `atlassianUserInfo`) has succeeded in this session.
 
-## Step 2 — Resolve target site/space/parent page
+## Step 2 — Resolve target site/space
 
-Read `confluence.site`, `confluence.space`, `confluence.parent_page` from `config/project.yaml`. If `space` or `parent_page` is blank, ask the human before proceeding — do not guess a space key or page title. Resolve the Atlassian `cloudId` via `getAccessibleAtlassianResources`, matching by the site hostname; re-resolve each session rather than trusting a cached ID indefinitely.
+Read `confluence.site` and `confluence.space` from `config/project.yaml`. If `space` is blank, ask the human before proceeding — do not guess a space key. Resolve the Atlassian `cloudId` via `getAccessibleAtlassianResources`, matching by the site hostname; re-resolve each session rather than trusting a cached ID indefinitely. The project folder itself (`ParentPage`) is resolved by the caller before invoking this skill (Gate 0b) — this skill does not create or search for project folders, only the pages inside one.
 
 ## Step 3 — Search before creating
 
-The whole package nests under a `PRD` child page directly beneath the configured `parent_page` — find or create that `PRD` page first (same search-before-create rule applies to it), then search for each of the ten section pages below underneath it (`searchConfluenceUsingCql`, or list children via `getPagesInConfluenceSpace` / `getConfluencePageDescendants`) to determine whether a same-titled page already exists:
+Search directly under `ParentPage` (the project folder) for each page in `PageSet` (`searchConfluenceUsingCql`, or list children via `getPagesInConfluenceSpace` / `getConfluencePageDescendants`) to determine whether a same-titled page already exists. In the full pipeline, most documents are created incrementally, one call at a time, well before the final-package call — that's expected: this search step is exactly what turns a repeat publish of an already-existing page (e.g. updating `PRD - <Project Name>` at Gate 7 after it was already created at Gate 1) into an UPDATE instead of a duplicate CREATE.
+
+A project's folder, once created, looks like this once every document type has been published at least once:
 
 ```
-PRD
-├── <Project Name> PRD — WF-<id>
-│   ├── Executive Summary
-│   ├── Requirements
-│   ├── Feature Specification
-│   ├── User Stories
-│   ├── Solution Architecture
-│   ├── UI/UX Specification
-│   ├── Estimation & Cost
-│   ├── Risk Register
-│   ├── Traceability Matrix
-│   └── Decision Log
-└── <Project Name> Test Strategy — WF-<id>   (only if the caller says the test strategy was approved alongside the PRD)
+<Project Name>                              (the project folder — created once, reused by every workflow for this project)
+├── PRD - <Project Name>                    (created at Gate 1; updated in place at Gate 7 with Executive Summary/Traceability Matrix/Decision Log)
+├── Feature Specification - <Project Name>  (Gate 2)
+├── Solution Architecture - <Project Name>  (Gate 2)
+├── Design Document - <Project Name>        (Gate 2 — the UI/UX spec)
+├── Estimate and Cost - <Project Name>      (Gate 4)
+├── Risk Register - <Project Name>          (Gate 4)
+├── Test Strategy - <Project Name>          (Gate 5)
+├── Solution Architecture Overview - <Project Name>  (Architecture Suite workflow, if generated)
+├── Security Architecture - <Project Name>           (Architecture Suite workflow, if generated)
+└── Technology Stack - <Project Name>                (Architecture Suite workflow, if generated)
 ```
 
-The test strategy is a single sibling page (it's one document, not ten sections) — same search-before-create/CREATE-vs-UPDATE treatment as every other page here, just don't invent it if the caller didn't say Gate 4 covered it.
+User stories are **not** a page here — they publish to Jira (see `orchestrator-agent.md`'s "Publishing user stories to Jira"); the PRD page's Traceability Matrix links to them by Jira key/URL instead of duplicating their content here.
 
-Page naming convention: prefix every page title with the workflow ID (e.g. `WF-2026-001 — Requirements`) unless the human specifies a different convention at Gate 5 — confirm the convention rather than assuming.
+Titles are fixed by the naming convention (`<Document Type> - <Project Name>`, exact labels in `orchestrator-agent.md`) — there is no workflow-ID prefix and no per-call naming decision to make; the same document type always resolves to the same title for a given project, which is what makes the search-before-create check meaningful across multiple workflows for the same project.
 
-**Note on `PageSet`'s "Solution Architecture" vs. the architecture suite's "Solution Architecture" page:** if both the PRD flow and `solution-architecture-suite-orchestrator-agent` are publishing to the same space, the search in this step is what prevents creating a duplicate — a same-titled page found here is a CREATE-vs-UPDATE case like any other, not a special case to special-case around.
+**Note on "Solution Architecture" vs. "Solution Architecture Overview":** these are deliberately different labels for different documents (the discovery pipeline's engineering `ARCH-XXX` spec vs. the Architecture Suite's executive-facing overview) — don't conflate them into one title, and don't let a search for one match the other.
 
-## Step 4 — Present at Gate 5 and wait
+## Step 4 — Present the exact page list and wait
 
 Show the human, before calling any write tool:
 - Target site, space, parent page.

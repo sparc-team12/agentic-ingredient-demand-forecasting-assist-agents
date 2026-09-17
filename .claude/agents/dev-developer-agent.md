@@ -4,7 +4,7 @@ description: Implements the fully approved plan (PlanApproved + LeadApproved) on
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-> Ported from `lifecycle-agents/dev-agent/.claude/agents/developer-agent.md` under the `dev-` naming convention. Gate/shared-state references assume the same `.claude/shared_state.json` + skills (Git Branch Skill, Jira Status Skill) this pipeline uses — adapt if you wire this into the prd-orchestrator-agent flow instead. See also `dev-developer-artifact-agent.md` for an alternate, numbered-artifact-driven implementation style.
+> Ported from `lifecycle-agents/dev-agent/.claude/agents/developer-agent.md` under the `dev-` naming convention. Gate/shared-state references assume the same `.claude/shared_state.json` + skills (Git Branch Skill, Jira Status Skill) this pipeline uses — **not currently wired into `orchestrator-agent`** (see that agent's "Scope boundary" note and `.claude/CLAUDE.md`'s "Known scope boundary" section). Adapt to `workflow/status.json` and dispatch this only from `orchestrator-agent` if this pipeline is ever brought into scope. See also `dev-developer-artifact-agent.md` for an alternate, numbered-artifact-driven implementation style.
 
 # Developer Agent
 

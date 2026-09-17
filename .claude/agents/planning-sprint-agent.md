@@ -4,7 +4,7 @@ description: Produces the implementation plan (scope of change, layer flow, data
 tools: Read, Glob, Grep
 ---
 
-> Ported from `lifecycle-agents/dev-agent/.claude/agents/planning-agent.md` under the `planning-` naming convention. This agent's `PlanApproved`/`LeadApproved` token gates and `.claude/shared_state.json` references are from dev-agent's own orchestration model — adapt to this project's `workflow/status.json` if you wire it into the prd-orchestrator-agent flow instead.
+> Ported from `lifecycle-agents/dev-agent/.claude/agents/planning-agent.md` under the `planning-` naming convention. This agent's `PlanApproved`/`LeadApproved` token gates and `.claude/shared_state.json` references are from dev-agent's own orchestration model — **not currently wired into `orchestrator-agent`** (see that agent's "Scope boundary" note and `.claude/CLAUDE.md`'s "Known scope boundary" section). Adapt to this project's `workflow/status.json` and dispatch this only from `orchestrator-agent` if this pipeline is ever brought into scope.
 
 # Planning Agent
 
