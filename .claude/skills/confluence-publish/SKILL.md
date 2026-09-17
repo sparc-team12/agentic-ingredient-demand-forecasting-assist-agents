@@ -7,9 +7,16 @@ description: Confluence publication procedure via the Atlassian MCP integration 
 
 Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §13–14. This skill is the only place Confluence-write logic lives — `.claude/skills/product-discovery/SKILL.md` calls into it at Gate 5 rather than duplicating it.
 
+## Input
+
+| Parameter | Required | Description |
+|---|---|---|
+| `PageSet` | No | The set of pages to publish, as `{title, body}` pairs. Defaults to the ten PRD section pages below if omitted, for backward compatibility with the PRD flow. A caller publishing a different document set (e.g. `solution-architecture-suite-orchestrator-agent`'s three architecture pages) passes its own `PageSet` instead — the search-before-create, CREATE-vs-UPDATE, and Gate 5 confirmation steps below apply identically regardless of which set is passed. |
+| `ParentPage` | No | Overrides `confluence.parent_page` from `config/project.yaml` for this call, if the caller's document set lives under a different parent (e.g. an "Architecture" page tree instead of the PRD tree). |
+
 ## Precondition (caller's responsibility, verify before invoking)
 
-`workflow/status.json` for the target workflow must show Gate 4 (`FINAL_PRD_APPROVAL`) with the literal decision `APPROVE_AND_PUBLISH`. If this skill is invoked without that, refuse and say why.
+The caller must have already recorded an explicit human-approval decision for every page in `PageSet` before invoking this skill — this skill performs no approval logic of its own, only publication mechanics. For the PRD flow, that is `workflow/status.json` Gate 4 (`FINAL_PRD_APPROVAL`) with the literal decision `APPROVE_AND_PUBLISH`. For any other `PageSet` (e.g. the architecture suite), the calling orchestrator defines and records its own equivalent gate (see `solution-architecture-suite-orchestrator-agent`'s Human gate) and must state which gate was cleared when invoking this skill. If no such gate decision is stated, refuse and ask which approval covers this call.
 
 ## Step 1 — Verify the MCP connector (don't assume)
 
@@ -49,6 +56,8 @@ PRD
 The test strategy is a single sibling page (it's one document, not ten sections) — same search-before-create/CREATE-vs-UPDATE treatment as every other page here, just don't invent it if the caller didn't say Gate 4 covered it.
 
 Page naming convention: prefix every page title with the workflow ID (e.g. `WF-2026-001 — Requirements`) unless the human specifies a different convention at Gate 5 — confirm the convention rather than assuming.
+
+**Note on `PageSet`'s "Solution Architecture" vs. the architecture suite's "Solution Architecture" page:** if both the PRD flow and `solution-architecture-suite-orchestrator-agent` are publishing to the same space, the search in this step is what prevents creating a duplicate — a same-titled page found here is a CREATE-vs-UPDATE case like any other, not a special case to special-case around.
 
 ## Step 4 — Present at Gate 5 and wait
 

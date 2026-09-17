@@ -8,10 +8,18 @@ confluence:
   # (2026-09-17): account sparc.team12@experionglobal.com, site below. Re-verify with
   # atlassianUserInfo / getAccessibleAtlassianResources if publishing ever fails.
   site: "https://experionglobal.atlassian.net"
-  space: ""
-  parent_page: ""
+  # Personal space "sparc.team12" -- confirmed via getConfluencePage 2026-09-17. Same
+  # space the confirmed PRD (5884510209) and the "Product Requirement" draft (5843681284)
+  # both live in.
+  space: "~712020c78d0510dbf248218881c00989970857"
+  # "Product Requirement" draft page (title as of 2026-09-17; currently empty).
+  # Architecture Suite pages (Solution Architecture, Security Architecture,
+  # Technology Stack) publish as children of this page.
+  parent_page: "5843681284"
   create_if_missing: false
   allow_updates: false
+  prd_page_url: "https://experionglobal.atlassian.net/wiki/x/AYC_XgE"
+  prd_local_path: "docs/01-prd/prd-ingredient-demand-forecasting.md"
 
 workflow:
   require_human_approval: true
