@@ -377,3 +377,23 @@ Impact:
 
 Related:
 infra/main.tf (aws_iam_openid_connect_provider.github_actions, aws_iam_role.github_actions), .github/workflows/terraform.yml, DEC-012 (superseded on auth method only)
+
+## DEC-016 — Fixed the three remaining Checkov findings for real (KMS log encryption, detailed monitoring, VPC flow logs)
+
+Decision:
+Unlike DEC-014 (suppress-with-reference for already-decided items), these three had no prior decision behind them, so they were fixed directly rather than suppressed: added `aws_kms_key.logs` (CMK, key rotation enabled) and wired it into `aws_cloudwatch_log_group.app` (CKV_AWS_158); added `monitoring = true` to `aws_instance.app` (CKV_AWS_126); added VPC Flow Logs — `aws_cloudwatch_log_group.vpc_flow_logs`, `aws_iam_role.vpc_flow_logs` + policy, and `aws_flow_log.vpc` (CKV2_AWS_11).
+
+Decided by:
+sparc.team12@experionglobal.com, directly in conversation on 2026-09-18 — pasted the three remaining Checkov failures and asked "why these errors can we fix these."
+
+Reason:
+User asked for fixes, not just explanations. Detailed monitoring and the flow-log role/policy are cheap and add real observability value; the KMS key is one new resource shared by both log groups, not per-log-group duplication.
+
+Alternatives considered:
+Suppressing CKV_AWS_158 (default AWS-owned-key encryption is already applied; a CMK adds no compliance-driven benefit — security-architecture.md §11 finds no regulation applies) was the leaner option and was explained as a judgment call before fixing it properly instead, per the user's explicit "fix these."
+
+Impact:
+New resources requiring additional IAM permissions beyond what `infra/iam-policy.json` currently lists (kms:CreateKey/PutKeyPolicy/CreateAlias etc., iam:CreateRole/PutRolePolicy for the flow-logs role, ec2:CreateFlowLogs/DeleteFlowLogs) — relevant once that file (or its replacement) is recreated/reconciled per the pending question about the deleted `infra/README.md`/`iam-policy.json`/`deploy.yml` files. `CKV_AWS_382` (wide-open security-group egress) remains unaddressed — not part of this specific ask.
+
+Related:
+infra/main.tf (aws_kms_key.logs, aws_cloudwatch_log_group.vpc_flow_logs, aws_iam_role.vpc_flow_logs, aws_flow_log.vpc), DEC-014

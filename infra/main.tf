@@ -27,6 +27,8 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_caller_identity" "current" {}
+
 # =============================================================================
 # Variables (defaults below match prod — the only environment that exists —
 # so `terraform apply` needs no -var-file; override with -var if ever needed)
@@ -248,6 +250,63 @@ resource "aws_vpc" "this" {
   tags = merge(var.tags, { Name = var.vpc_name })
 }
 
+# CKV2_AWS_11: VPC Flow Logs — no record of network traffic existed before
+# this. Uses the same CMK as the app log group (aws_kms_key.logs, defined
+# below under Logging + IAM).
+resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
+  name              = "/vpc/${var.vpc_name}/flow-logs"
+  retention_in_days = var.log_retention_days
+  kms_key_id        = aws_kms_key.logs.arn
+
+  tags = var.tags
+}
+
+resource "aws_iam_role" "vpc_flow_logs" {
+  name = "${var.vpc_name}-flow-logs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "VPCFlowLogsAssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "vpc-flow-logs.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy" "vpc_flow_logs" {
+  name = "${var.vpc_name}-flow-logs-policy"
+  role = aws_iam_role.vpc_flow_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "WriteFlowLogs"
+      Effect = "Allow"
+      Action = [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+      ]
+      Resource = "${aws_cloudwatch_log_group.vpc_flow_logs.arn}:*"
+    }]
+  })
+}
+
+resource "aws_flow_log" "vpc" {
+  vpc_id               = aws_vpc.this.id
+  traffic_type         = "ALL"
+  log_destination_type = "cloud-watch-logs"
+  log_destination      = aws_cloudwatch_log_group.vpc_flow_logs.arn
+  iam_role_arn         = aws_iam_role.vpc_flow_logs.arn
+
+  tags = merge(var.tags, { Name = "${var.vpc_name}-flow-logs" })
+}
+
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 
@@ -330,9 +389,56 @@ resource "aws_security_group" "app" {
 # Logging + IAM
 # =============================================================================
 
+# CKV_AWS_158: customer-managed key so log groups aren't left on the default
+# AWS-owned key. One key, shared by both log groups below (app + VPC flow logs).
+resource "aws_kms_key" "logs" {
+  description             = "CMK for CloudWatch Logs encryption (application + VPC flow logs)"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowRootAccountAdmin"
+        Effect    = "Allow"
+        Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
+        Action    = "kms:*"
+        Resource  = "*"
+      },
+      {
+        Sid       = "AllowCloudWatchLogsUse"
+        Effect    = "Allow"
+        Principal = { Service = "logs.${var.region}.amazonaws.com" }
+        Action = [
+          "kms:Encrypt*",
+          "kms:Decrypt*",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:Describe*",
+        ]
+        Resource = "*"
+        Condition = {
+          ArnLike = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"
+          }
+        }
+      },
+    ]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_kms_alias" "logs" {
+  name          = "alias/${var.app_name}-logs"
+  target_key_id = aws_kms_key.logs.key_id
+}
+
 resource "aws_cloudwatch_log_group" "app" {
   name              = var.log_group_name
   retention_in_days = var.log_retention_days # CKV_AWS_338 wants >=365; 30 days is tf-coding-inputs.md assumption #10 (approved) — no compliance driver found (security-architecture.md §11), low-cost default for a low-traffic internal tool
+  kms_key_id        = aws_kms_key.logs.arn
 
   tags = var.tags
 }
@@ -397,6 +503,7 @@ resource "aws_instance" "app" {
   ami                         = var.app_ami_id
   instance_type               = var.app_instance_type
   ebs_optimized               = true # CKV_AWS_135 — always true for t3/current-gen (Nitro) instances regardless; set explicitly rather than relying on the implicit default
+  monitoring                  = true # CKV_AWS_126 — 1-minute metrics instead of the 5-minute default; small added cost, real value for spotting t3.micro CPU-credit exhaustion early
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.app.id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
