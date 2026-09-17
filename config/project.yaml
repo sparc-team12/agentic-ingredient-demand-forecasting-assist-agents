@@ -26,6 +26,7 @@ agents:
   uiux_designer: true
   estimation_cost: true
   risk_compliance: true
+  test_strategy: true
 
 quality:
   require_traceability: true

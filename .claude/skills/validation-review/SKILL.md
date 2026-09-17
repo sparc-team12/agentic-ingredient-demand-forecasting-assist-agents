@@ -18,6 +18,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
   - `artifacts/design/ui-ux-specification.md`
   - `artifacts/estimation/estimation-cost-analysis.md`
   - `artifacts/risk/risk-register.md`
+  - `artifacts/test-strategy/test-strategy.md`
 
 ## Checklist
 
@@ -27,12 +28,14 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - UI/UX vs. user journeys — every `UI-XXX` traces to a real story/feature; no story implying a screen that has no `UI-XXX`.
 - Estimate vs. architecture — every `EST-XXX` traces to a real `FEAT-XXX`/`ARCH-XXX`; no architecture component left unestimated.
 - Risks vs. architecture/features — spot-check that high-impact architecture assumptions and integration points have a corresponding `RISK-XXX`.
+- Risk vs. test strategy — every `RISK-XXX` rated Critical or High has at least one `TS-XXX` mapping it to a required test depth; flag any that don't.
 
 ### Completeness
 - Missing requirements — anything features/stories imply that isn't a `REQ-` in the PRD (or, failing that, the requirements baseline).
 - Missing acceptance criteria — any `US-XXX` without testable acceptance criteria.
 - Missing error/empty/loading states — any `UI-XXX` flow without them noted.
 - Missing non-functional requirements — features with no NFR coverage at all.
+- Missing test coverage — any NFR `REQ-XXX` or Critical/High `RISK-XXX` with no corresponding `TS-XXX`; any `FEAT-XXX`/`US-XXX` the test strategy's coverage approach never mentions.
 - Missing dependencies — features/stories/architecture items with no dependency section filled in when one plausibly exists.
 - Missing assumptions — architecture/estimation/risk items that read as certain but rest on an unstated assumption.
 

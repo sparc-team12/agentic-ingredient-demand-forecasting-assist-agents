@@ -1,6 +1,6 @@
 ---
 name: product-discovery
-description: Master orchestration procedure for the human-gated AI product discovery & planning workflow. Invoked by the /product-plan, /orchestrate, /research, /features, /stories, /architecture, /uiux, /estimate, /risk, /prd, /review, /status, /publish, /retry, and /skip commands. Coordinates the seven specialist subagents in .claude/agents/, maintains workflow/status.json and workflow/events.jsonl, enforces human approval gates, and delegates validation to the validation-review skill and Confluence publishing to the confluence-publish skill.
+description: Master orchestration procedure for the human-gated AI product discovery & planning workflow. Invoked by the /product-plan, /orchestrate, /research, /features, /stories, /architecture, /uiux, /estimate, /risk, /test-strategy, /prd, /review, /status, /publish, /retry, and /skip commands. Coordinates prd-agent and the specialist subagents in .claude/agents/ (including test-strategy-agent), maintains workflow/status.json and workflow/events.jsonl, enforces human approval gates, and delegates validation to the validation-review skill and Confluence publishing to the confluence-publish skill.
 ---
 
 # Product Discovery & Planning — Orchestration Procedure
@@ -49,7 +49,8 @@ Specialist input/output artifact contracts live in each `.claude/agents/*.md` fi
         "solution_architect": { "status": "NOT_STARTED" },
         "uiux_designer": { "status": "NOT_STARTED" },
         "estimation_cost": { "status": "NOT_STARTED" },
-        "risk_compliance": { "status": "NOT_STARTED" }
+        "risk_compliance": { "status": "NOT_STARTED" },
+        "test_strategy": { "status": "NOT_STARTED" }
       },
       "artifacts": [],
       "decisions": [],
@@ -97,9 +98,14 @@ risk_compliance
         |
    VALIDATION (consistency / completeness / feasibility / quality-security)
         |
-   PRD ASSEMBLY + traceability matrix
+   +----+----+
+   |         |
+   PRD ASSEMBLY   test_strategy    <- run in parallel (independent — both read the same approved artifacts)
+   + traceability
+   matrix
+   +----+----+
         |
-   [GATE 4: FINAL_PRD_APPROVAL — requires literal "APPROVE_AND_PUBLISH"]
+   [GATE 4: FINAL_PRD_APPROVAL — presents both the PRD package and the test strategy; requires literal "APPROVE_AND_PUBLISH"]
         |
    [GATE 5: CONFLUENCE_PUBLICATION — requires explicit per-page confirmation]
 ```
@@ -111,9 +117,9 @@ Dispatch each specialist by invoking its agent definition in `.claude/agents/` w
 - **FULL** (`/product-plan <requirement>`): create a new workflow, dispatch `prd_agent` with the raw input as given (free-text conversation, ticket, or detailed brief — whatever shape it arrives in), let it interview the human and call `research_requirements` itself as it hits gaps, stop at Gate 1 once `prd_agent` hands back a `Confirmed` PRD. On resume after approval, continue the full chain through Gate 5.
 - **RESUME** (`/product-plan --resume <workflow-id>`): read `status.json` for that workflow, determine `currentGate`/`overallStatus`, and continue from exactly that point — never re-run a `COMPLETED` agent whose artifact still exists and is still the approved input for the next step.
 - **ORCHESTRATE_ONLY** (`/orchestrate --only <agent1,agent2,...>` or `/product-plan --agents ...`): run exactly the named agents (in correct dependency order), reusing existing upstream artifacts, still enforcing any gate that sits between the named agents and their inputs/outputs.
-- **SINGLE_AGENT** (`/research <requirement>`, `/features <workflow-id>`, `/stories <workflow-id>`, `/architecture <workflow-id>`, `/uiux <workflow-id>`, `/estimate <workflow-id>`, `/risk <workflow-id>`): run one specialist directly.
+- **SINGLE_AGENT** (`/research <requirement>`, `/features <workflow-id>`, `/stories <workflow-id>`, `/architecture <workflow-id>`, `/uiux <workflow-id>`, `/estimate <workflow-id>`, `/risk <workflow-id>`, `/test-strategy <workflow-id>`): run one specialist directly.
   - `/research` with no existing workflow-id creates a new workflow.
-  - All others require a `workflow-id` and must refuse to run if their required upstream artifact is missing, or exists but is not yet human-approved at the relevant gate — explain what's missing/unapproved instead of proceeding.
+  - All others require a `workflow-id` and must refuse to run if their required upstream artifact is missing, or exists but is not yet human-approved at the relevant gate — explain what's missing/unapproved instead of proceeding. `/test-strategy` specifically requires Gate 3 `APPROVED` (it reads the risk register, not just the estimate).
 - **REVIEW** (`/review <workflow-id>`): run the Validation procedure (§6) against whatever artifacts currently exist and report findings; does not advance any gate by itself.
 - **STATUS** (`/status [workflow-id]`): print a concise human-readable rendering of `status.json` for the given workflow, or a list of all workflows if none given.
 - **PRD** (`/prd <workflow-id>`): assemble the final PRD package (§7) — only valid once Gate 3 is APPROVED.
@@ -128,8 +134,8 @@ At every gate: present what was produced, list unresolved questions/risks/contra
 - **Gate 0 — Intake**: after parsing the human's request, restate your understanding in a few sentences (problem, scope hints, any constraints/documents/Jira-Confluence references given) and ask for anything critical that's missing before dispatching `prd_agent`.
 - **Gate 1 — Requirements Approval**: present the `Confirmed` PRD `prd_agent` produced (its Requirements, Research Context, Assumptions, and Open Questions sections already carry the research findings and confidence notes). Require exactly one of `APPROVE`, `REQUEST_CHANGES`, `PROVIDE_CLARIFICATION`, `STOP`. On `REQUEST_CHANGES`/`PROVIDE_CLARIFICATION`, re-run `prd_agent` with the human's input (amendment flow) and increment `revisionCount`. On `STOP`, halt the workflow and set `overallStatus: BLOCKED`.
 - **Gate 2 — Solution Review**: after `feature_analyst`, `user_story_analyst`, `solution_architect`, `uiux_designer` complete, present a concise cross-domain summary (major features, key stories, architecture summary, major UI/UX flows, dependencies, any contradictions found, open decisions). Require approval before dispatching `estimation_cost`.
-- **Gate 3 — Estimate/Risk Review**: present effort/timeline/cost ranges, major risks, security/compliance concerns, and high-impact assumptions. Require approval before PRD assembly.
-- **Gate 4 — Final PRD Approval**: present the assembled PRD package and validation findings. Require the literal string `APPROVE_AND_PUBLISH`. Any other response stops publication (it does not have to stop the workflow — the human may still want the PRD without publishing).
+- **Gate 3 — Estimate/Risk Review**: present effort/timeline/cost ranges, major risks, security/compliance concerns, and high-impact assumptions. Require approval before PRD assembly and `test_strategy`.
+- **Gate 4 — Final PRD Approval**: present the assembled PRD package, the test strategy document, and validation findings together. Require the literal string `APPROVE_AND_PUBLISH`. Any other response stops publication (it does not have to stop the workflow — the human may still want the PRD and test strategy without publishing).
 - **Gate 5 — Confluence Publication**: before calling any write tool, show target site/space/parent page, the exact page titles to be created/updated, whether each is CREATE or UPDATE (per §8 existence check), and flag anything destructive (an UPDATE that would replace existing content). Require explicit confirmation. Never overwrite an existing page without it.
 
 When agents disagree or an artifact contradicts another, do not silently resolve it: record the disagreement in `openQuestions`, show both sides to the human, ask which should stand, then update `workflow/decisions.md` with the resolution before continuing.
@@ -164,9 +170,13 @@ PRD parent page
 
 Include the standard metadata block (Workflow ID, Agent: orchestrator, Created, Status, Source artifacts, Human approval status) at the top of the assembled PRD.
 
+## 7a. Test strategy (`/test-strategy`, and as part of FULL mode alongside §7, before Gate 4)
+
+Dispatch `test-strategy-agent` (`.claude/agents/test-strategy-agent.md`) — it owns the full contract (input artifacts, the human-consultation step, output structure, hard rules) so none of that is duplicated here. It runs independently of §7's PRD assembly (both read the same Gate-3-approved artifacts; neither writes the other's output), producing `artifacts/test-strategy/test-strategy.md`. Present it at Gate 4 alongside the assembled PRD package — it is not folded into `final-prd.md` itself, since it's a distinct document with its own downstream readers (test planning, test case generation, test automation).
+
 ## 8. Confluence publication (`/publish`, Gate 5)
 
-Delegate to the **`confluence-publish`** skill (`.claude/skills/confluence-publish/SKILL.md`) — it owns MCP-connector verification, site/space/parent-page confirmation, search-before-create, CREATE-vs-UPDATE detection, and the actual publish calls, so none of that is duplicated here. Before invoking it, confirm Gate 4 recorded the literal `APPROVE_AND_PUBLISH` decision for this workflow. After it returns, write the resulting page IDs/URLs into `confluence.pages` in `status.json` and append the `PUBLISHED` events it reports to `events.jsonl` (this skill remains the sole writer of `status.json`/`events.jsonl`; `confluence-publish` only returns data, it does not write workflow files itself). The published package nests under a `PRD` child page under the project's main Confluence page — the same folder `prd_agent` already publishes its own confirmed draft into, so both live in one place.
+Delegate to the **`confluence-publish`** skill (`.claude/skills/confluence-publish/SKILL.md`) — it owns MCP-connector verification, site/space/parent-page confirmation, search-before-create, CREATE-vs-UPDATE detection, and the actual publish calls, so none of that is duplicated here. Before invoking it, confirm Gate 4 recorded the literal `APPROVE_AND_PUBLISH` decision for this workflow. After it returns, write the resulting page IDs/URLs into `confluence.pages` in `status.json` and append the `PUBLISHED` events it reports to `events.jsonl` (this skill remains the sole writer of `status.json`/`events.jsonl`; `confluence-publish` only returns data, it does not write workflow files itself). The published package nests under a `PRD` child page under the project's main Confluence page — the same folder `prd_agent` already publishes its own confirmed draft into, so both live in one place. If Gate 4 approved the test strategy alongside the PRD, offer to publish it too, as its own page under the same `PRD` folder (sibling to the PRD package, not merged into it) — same search-before-create, CREATE-vs-UPDATE, and explicit-confirmation rules apply.
 
 ## 9. What this skill must never do
 

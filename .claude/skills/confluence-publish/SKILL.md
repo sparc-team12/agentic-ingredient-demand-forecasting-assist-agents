@@ -32,18 +32,21 @@ The whole package nests under a `PRD` child page directly beneath the configured
 
 ```
 PRD
-└── <Project Name> PRD — WF-<id>
-    ├── Executive Summary
-    ├── Requirements
-    ├── Feature Specification
-    ├── User Stories
-    ├── Solution Architecture
-    ├── UI/UX Specification
-    ├── Estimation & Cost
-    ├── Risk Register
-    ├── Traceability Matrix
-    └── Decision Log
+├── <Project Name> PRD — WF-<id>
+│   ├── Executive Summary
+│   ├── Requirements
+│   ├── Feature Specification
+│   ├── User Stories
+│   ├── Solution Architecture
+│   ├── UI/UX Specification
+│   ├── Estimation & Cost
+│   ├── Risk Register
+│   ├── Traceability Matrix
+│   └── Decision Log
+└── <Project Name> Test Strategy — WF-<id>   (only if the caller says the test strategy was approved alongside the PRD)
 ```
+
+The test strategy is a single sibling page (it's one document, not ten sections) — same search-before-create/CREATE-vs-UPDATE treatment as every other page here, just don't invent it if the caller didn't say Gate 4 covered it.
 
 Page naming convention: prefix every page title with the workflow ID (e.g. `WF-2026-001 — Requirements`) unless the human specifies a different convention at Gate 5 — confirm the convention rather than assuming.
 

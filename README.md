@@ -1,17 +1,17 @@
 # agentic-ingredient-demand-forecasting-assist-agents
 
-A human-in-the-loop AI product discovery and planning system, built on Claude Code. You give it a product idea, requirement, ticket, or business problem; a **Product Discovery & Planning Orchestrator** coordinates seven specialist subagents to produce a validated PRD package. Humans approve at defined gates throughout — this system does **not** autonomously build or ship a product; it accelerates discovery and planning while people stay accountable for requirements, architecture, estimates, risk acceptance, and publication.
+A human-in-the-loop AI product discovery and planning system, built on Claude Code. You give it a product idea, requirement, ticket, or business problem; a **Product Discovery & Planning Orchestrator** dispatches an entry-point PRD agent and eight specialist subagents to produce a validated PRD package plus a test strategy document. Humans approve at defined gates throughout — this system does **not** autonomously build or ship a product; it accelerates discovery and planning while people stay accountable for requirements, architecture, estimates, risk acceptance, and publication.
 
 ## 1. What this system does
 
 Given a statement like "Build an ingredient demand forecasting assistant for a multi-location kitchen operator," the orchestrator:
 
-1. Runs research/requirements extraction, then **stops for human approval**.
+1. Dispatches **prd-agent** with the raw input — it interviews the human conversationally, dispatching the research agent itself as it hits gaps, and produces a Confirmed PRD, then **stops for human approval (Gate 1)**.
 2. Runs feature decomposition, user stories, solution architecture, and UI/UX in parallel, then **stops for human approval**.
 3. Runs estimation/cost and risk/compliance, then **stops for human approval**.
 4. Validates everything for consistency, completeness, feasibility, and quality/security.
-5. Assembles a final PRD with a full traceability matrix, then **requires the literal `APPROVE_AND_PUBLISH`**.
-6. Publishes to Confluence via the Atlassian MCP integration, **only after explicit per-page confirmation**.
+5. In parallel, assembles a final PRD with a full traceability matrix **and** dispatches **test-strategy-agent** (consuming the PRD, features, stories, architecture, UI/UX, and risk register, plus direct human input on QA tooling/environment/compliance context) to produce a test strategy document — the guideline later test planning, test case generation, and test automation work will use. Both are presented together, then **require the literal `APPROVE_AND_PUBLISH`**.
+6. Publishes to Confluence via the Atlassian MCP integration, **only after explicit per-page confirmation** — the PRD and test strategy each land as their own page under a `PRD` folder in the project's Confluence space.
 
 ## 2. Architecture
 
@@ -26,12 +26,18 @@ Given a statement like "Build an ingredient demand forecasting assistant for a m
               | validates / gates / publishes|
               +-------------+---------------+
                             |
+                            v
+                       PRD AGENT  <--- interviews human, dispatches
+                            |           Research & Requirements Agent
+                            |           itself as gaps appear
+                      [GATE 1: Confirmed PRD]
+                            |
           +-----------------+-----------------+
           |        |        |        |        |
           v        v        v        v        v
-      Research  Feature  User     Solution  UI/UX
-      & Req.    Analyst   Story    Architect Designer
-      Agent     Agent     Agent    Agent     Agent
+      (PRD)     Feature  User     Solution  UI/UX
+      artifact   Analyst   Story    Architect Designer
+                 Agent     Agent    Agent     Agent
           |        |        |        |        |
           +--------+--------+--------+--------+
                             |
@@ -41,6 +47,8 @@ Given a statement like "Build an ingredient demand forecasting assistant for a m
                             v
                      Risk & Compliance
                             |
+                      [GATE 3: Estimate/Risk approved]
+                            |
                             v
               +-----------------------------+
               | ORCHESTRATOR VALIDATION      |
@@ -48,14 +56,25 @@ Given a statement like "Build an ingredient demand forecasting assistant for a m
               | Feasibility / Quality-Sec.   |
               +-------------+---------------+
                             |
+              +-------------+-------------+
+              |                           |
+              v                           v
+        PRD ASSEMBLY              TEST STRATEGY AGENT
+        + traceability             (PRD + features + stories +
+                                     architecture + UI/UX + risk
+                                     + direct human QA input)
+              |                           |
+              +-------------+-------------+
+                            |
                             v
                     HUMAN APPROVAL
+                  (Gate 4: PRD + test strategy)
                             |
                             v
-                       FINAL PRD
+              FINAL PRD  +  TEST STRATEGY
                             |
                             v
-                     CONFLUENCE
+                CONFLUENCE (PRD folder, one page each)
 ```
 
 Specialist agents are direct children of the orchestrator — there is no recursive agent tree. The orchestration procedure lives in `.claude/skills/product-discovery/SKILL.md`, which delegates the four-dimension validation checklist to `.claude/skills/validation-review/SKILL.md` and the Confluence publish mechanics to `.claude/skills/confluence-publish/SKILL.md`; every slash command is a thin dispatcher into whichever of the three actually owns the logic it needs.
@@ -65,6 +84,7 @@ Specialist agents are direct children of the orchestrator — there is no recurs
 | Agent | File | Output |
 |---|---|---|
 | Product Discovery Orchestrator | `.claude/agents/product-discovery-orchestrator.md` | `workflow/status.json`, `workflow/events.jsonl`, gate management, PRD assembly, Confluence publish |
+| **PRD Agent (entry point)** | `.claude/agents/prd-agent.md` | `artifacts/prd/prd-<slug>.md` (`REQ-XXX`) — interviews the human, dispatches Research & Requirements itself as needed |
 | Research & Requirements | `.claude/agents/research-requirements-agent.md` | `artifacts/research/requirements-baseline.md`, `artifacts/research/open-questions.md` |
 | Feature Analyst | `.claude/agents/feature-analyst-agent.md` | `artifacts/features/feature-specification.md` (`FEAT-XXX`) |
 | User Story Analyst | `.claude/agents/user-story-analyst-agent.md` | `artifacts/stories/user-stories.md` (`US-XXX`) |
@@ -72,6 +92,7 @@ Specialist agents are direct children of the orchestrator — there is no recurs
 | UI/UX Designer | `.claude/agents/uiux-designer-agent.md` | `artifacts/design/ui-ux-specification.md` (`UI-XXX`) |
 | Estimation & Cost | `.claude/agents/estimation-cost-agent.md` | `artifacts/estimation/estimation-cost-analysis.md` (`EST-XXX`) |
 | Risk & Compliance | `.claude/agents/risk-compliance-agent.md` | `artifacts/risk/risk-register.md` (`RISK-XXX`) |
+| Test Strategy | `.claude/agents/test-strategy-agent.md` | `artifacts/test-strategy/test-strategy.md` (`TS-XXX`) — guideline for test planning, test case generation, and test automation |
 
 Each agent file states its input contract, output contract, allowed tools, and what it must **not** decide unilaterally.
 
@@ -80,24 +101,24 @@ Each agent file states its input contract, output contract, allowed tools, and w
 | Gate | After | Requires |
 |---|---|---|
 | 0 — Intake | Parsing the request | Orchestrator confirms understanding; asks if critical info is missing |
-| 1 — Requirements Approval | Research & Requirements | `APPROVE` / `REQUEST_CHANGES` / `PROVIDE_CLARIFICATION` / `STOP` |
+| 1 — Requirements Approval | PRD Agent (interview + research as needed) | `APPROVE` / `REQUEST_CHANGES` / `PROVIDE_CLARIFICATION` / `STOP` on the Confirmed PRD |
 | 2 — Solution Review | Features, Stories, Architecture, UI/UX | Approval before estimation/risk |
-| 3 — Estimate/Risk Review | Estimation & Cost, Risk & Compliance | Approval before final PRD |
-| 4 — Final PRD Approval | PRD assembly + validation | Literal `APPROVE_AND_PUBLISH` |
+| 3 — Estimate/Risk Review | Estimation & Cost, Risk & Compliance | Approval before final PRD / test strategy |
+| 4 — Final PRD Approval | PRD assembly + Test Strategy + validation | Literal `APPROVE_AND_PUBLISH` on both documents together |
 | 5 — Confluence Publication | Gate 4 | Explicit confirmation per page; existing pages are never silently overwritten |
 
 ## 5. Repository structure
 
 ```text
 .claude/
-  agents/            8 subagent definitions (orchestrator + 7 specialists)
+  agents/            10 subagent definitions (orchestrator + prd-agent + 8 specialists)
   skills/
     product-discovery/SKILL.md   master orchestration procedure (dispatch order, gates)
     validation-review/SKILL.md   consistency/completeness/feasibility/quality-security checklist
     confluence-publish/SKILL.md  MCP verification, search-before-create, CREATE vs UPDATE, publish
   commands/          /product-plan, /orchestrate, /research, /features, /stories,
-                      /architecture, /uiux, /estimate, /risk, /review, /status,
-                      /prd, /publish, /retry, /skip
+                      /architecture, /uiux, /estimate, /risk, /test-strategy, /review,
+                      /status, /prd, /publish, /retry, /skip
   CLAUDE.md          repo-level operating rules for Claude Code
 artifacts/           specialist output (created on demand, never pre-populated)
 workflow/
@@ -130,17 +151,18 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 ## 8. Available commands
 
 ```text
-/product-plan <requirement>                 full gated workflow (new workflow)
+/product-plan <requirement>                 full gated workflow (new workflow, dispatches prd-agent first)
 /product-plan --resume <workflow-id>        resume from wherever it stopped
 /product-plan --agents <a,b,c> <req>        targeted orchestration
 /orchestrate --only <a,b,c> [workflow-id]   run only named agents
-/research <requirement>                     research/requirements only -> Gate 1
+/research <requirement>                     ad hoc research pass (normally run by prd-agent itself, not standalone)
 /features <workflow-id>                     feature analyst only
 /stories <workflow-id>                      user story analyst only
 /architecture <workflow-id>                 solution architect only
 /uiux <workflow-id>                         UI/UX designer only
 /estimate <workflow-id>                     estimation & cost only
 /risk <workflow-id>                         risk & compliance only -> Gate 3
+/test-strategy <workflow-id>                test strategy only (requires Gate 3 approved)
 /review <workflow-id>                       validation pass (consistency/completeness/feasibility/quality-security)
 /prd <workflow-id>                          assemble final PRD + traceability -> Gate 4
 /publish <workflow-id>                      Confluence publication -> Gate 5
@@ -180,10 +202,11 @@ See `SETUP_DECISIONS.md` for the full list, notably:
 ```text
 1. Start Claude Code in this repository.
 2. Run: /product-plan examples/ingredient-demand-forecasting.md
-3. Respond to Gate 1 (Requirements Approval) with APPROVE, REQUEST_CHANGES, PROVIDE_CLARIFICATION, or STOP.
-4. Respond to Gate 2 (Solution Review) once features/stories/architecture/UI-UX are shown.
-5. Respond to Gate 3 (Estimate/Risk Review).
-6. Review the assembled PRD and traceability matrix at Gate 4; respond APPROVE_AND_PUBLISH to proceed, anything else to stop.
-7. Confirm the exact Confluence page list at Gate 5 to publish.
-8. Check /status <workflow-id> at any point to see where things stand.
+3. Answer prd-agent's interview questions (it may pause mid-interview to run research on a gap it can't resolve from your answers alone).
+4. Respond to Gate 1 (Requirements Approval) with APPROVE, REQUEST_CHANGES, PROVIDE_CLARIFICATION, or STOP once prd-agent hands back a Confirmed PRD.
+5. Respond to Gate 2 (Solution Review) once features/stories/architecture/UI-UX are shown.
+6. Respond to Gate 3 (Estimate/Risk Review). test-strategy-agent may ask about existing QA tooling/environments/compliance obligations once this is approved.
+7. Review the assembled PRD, test strategy, and traceability matrix at Gate 4; respond APPROVE_AND_PUBLISH to proceed, anything else to stop.
+8. Confirm the exact Confluence page list at Gate 5 to publish (PRD and test strategy each land under the project's PRD folder).
+9. Check /status <workflow-id> at any point to see where things stand.
 ```
