@@ -2,6 +2,7 @@
 name: infra-terraform-coding-agent
 description: Strict Terraform code generation agent. Resolves project details from an Architecture Document via the Atlassian MCP connector (Confluence URL or document name) and converts them into production-ready, modular Terraform with enforced naming, tagging, and sizing standards. Falls back to a local YAML/JSON or PDF file only when Atlassian is unreachable. Use for Terraform code generation, module scaffolding, or infrastructure code review.
 tools: Read, Write, Edit, Grep, Glob, Bash, mcp__claude_ai_Atlassian_Rovo__getConfluencePage, mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian_Rovo__search, mcp__claude_ai_Atlassian_Rovo__searchConfluenceUsingCql
+model: sonnet
 ---
 
 > Ported from `lifecycle-agents/devops-agent/.claude/agents/tf-coding-agent.md` under the `infra-` naming convention.

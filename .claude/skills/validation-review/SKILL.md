@@ -22,6 +22,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
   - `artifacts/architecture/solution-architecture-overview.md` (narrative Confluence-page draft from `solution-architecture-overview-agent`)
   - `artifacts/architecture/security-architecture.md` (from `solution-security-architecture-agent`)
   - `artifacts/architecture/tech-stack.md` (from `solution-tech-stack-agent`)
+  - `artifacts/architecture/infrastructure-architecture.md` (from `infra-architecture-agent` — primary source required by `infra-terraform-coding-agent` and `infra-pipeline-agent`)
   - `artifacts/features/feature-epic-breakdown*.md` (Shape B Epic/Feature breakdown from `feature-analyst-agent` — source of `EPIC-`/`FEAT-` ids where this shape is used instead of `feature-specification.md`)
   - a user-journeys document, if one exists (local or Confluence-sourced) — Shape B's flow/navigation source
   - `artifacts/design/ui-ux-specification*.md` (Shape B UI/UX draft from `uiux-designer-agent`, tracing to `EPIC-`/`FEAT-`/`REQ-` instead of `FEAT-`/`US-`)
@@ -31,7 +32,9 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 ### Consistency
 - Feature vs. user-story alignment — every `FEAT-XXX` has at least one story, every story's `Traces to` resolves to a real feature ID.
 - Architecture vs. feature requirements — every `ARCH-XXX` traces to a real feature/requirement; no feature requiring persistence/integration/auth left unaddressed by any `ARCH-XXX`.
-- Solution Architecture Overview / Security Architecture / Tech Stack vs. `ARCH-XXX` — every component/technology named in these three narrative pages traces to an actual `ARCH-XXX` entry; flag any page that names a technology or component the engineering architecture artifact never mentions.
+- Solution Architecture Overview / Security Architecture / Tech Stack / Infrastructure Architecture vs. `ARCH-XXX` — every component/technology named in these four narrative pages traces to an actual `ARCH-XXX` entry; flag any page that names a technology or component the engineering architecture artifact never mentions.
+- Infrastructure Architecture vs. Tech Stack — the IaC tool and CI/CD tooling named in `infrastructure-architecture.md` must match `tech-stack.md`'s "Infrastructure as Code" / "DevOps & CI/CD" entries; flag any contradiction.
+- Infrastructure Architecture vs. Security Architecture — infrastructure-architecture.md's Infrastructure as Code / CI-CD sections must not contradict security-architecture.md's Infrastructure Security / CI-CD Security controls (e.g. a public-facing resource in the inventory with no matching control).
 - Feature/Epic breakdown vs. `ARCH-XXX` (Shape B only) — every `EPIC-XXX`/`FEAT-XXX` in `feature-epic-breakdown.md` traces to real `REQ-XXX` ids in the PRD; if `solution-architecture.md` already exists, spot-check that no `ARCH-XXX` component lacks a corresponding feature that would need it (an architecture component with nothing driving it is itself a finding).
 - Security Architecture vs. risk register — every control in `security-architecture.md` has a corresponding `RISK-XXX` (or is itself the mitigation named on one); every security-relevant `RISK-XXX` has a corresponding control.
 - UI/UX vs. user journeys — every `UI-XXX` traces to a real story/feature; no story implying a screen that has no `UI-XXX`.

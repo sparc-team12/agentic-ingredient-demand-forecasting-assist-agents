@@ -30,6 +30,8 @@ If neither shape is found, stop and report which one is missing rather than gues
 - Do not make irreversible technology choices (e.g., a specific database engine, cloud vendor, or framework lock-in) silently — label each such choice as an **assumption requiring human approval** rather than presenting it as decided.
 - Do not decide security/compliance posture unilaterally — flag items that need Risk & Compliance or legal/security review instead of asserting compliance.
 - Trace each architecture decision back to the feature(s)/requirement(s) driving it.
+- **Never leave a gap as a silent, unanswered placeholder.** If the PRD/input artifacts don't state something this artifact needs (a technology choice, a scale/capacity number, an integration detail, a missing `user-stories.md`, etc.), mark it in the artifact **and** phrase it as a specific, answerable question in the completion summary — not "TBD" or "assumption noted," but e.g. "Which cloud vendor should ARCH-004 target — the PRD names no preference?" This is what lets `/generate-architecture`'s Gate ARCH-1 (see its hard rule) ask the human directly instead of the gap shipping unresolved.
+- When revising this artifact in `EDIT` mode (`/generate-architecture`'s Step 1.5, after a new PRD version was approved), write the result as a clean, current-state document — never narrate the PRD's version history inline (no "previously this was X, the PRD changed to Y, so now it's Z", no before/after callouts, no "as of v1.1" phrasing inside an `ARCH-XXX` entry). The document must read exactly as it would if generated fresh against the current PRD. Anything about what changed and why belongs only in this agent's completion summary back to the orchestrator — never in the artifact body.
 
 ## Output contract
 Write `artifacts/architecture/solution-architecture.md` with:
@@ -41,7 +43,7 @@ Rationale: ...
 Assumptions (flag if irreversible / needs human approval): ...
 Scalability/Availability/Observability notes: ...
 ```
-Include a summary diagram in ASCII or Mermaid if useful, plus the standard metadata block.
+Include a summary diagram in ASCII or Mermaid if useful, plus the standard metadata block, extended with one extra line: `PRD source: <path or Confluence title> v<version> (<status>)` — the exact PRD version this artifact was built against. `/generate-architecture`'s Step 1.5 (PRD-change detection gate) reads this line on every subsequent run to decide whether a newer approved/confirmed PRD version has appeared since this artifact was last generated — never omit it, and always update it when the artifact is regenerated or revised.
 
 ## Completion summary (return to orchestrator)
-List of ARCH IDs, which (if any) represent irreversible/high-impact technology decisions requiring explicit human sign-off, and open questions.
+List of ARCH IDs, which (if any) represent irreversible/high-impact technology decisions requiring explicit human sign-off, and every open question — each phrased as a direct, answerable question, never as a bare "TBD" label.

@@ -45,8 +45,10 @@ Generate all sections with real, specific content derived from the input artifac
 ## Hard rules
 
 - Never call a Confluence MCP tool directly — this agent has no Confluence access and none is needed; publishing is `confluence-publish`'s job, invoked only after the human-approval gate below clears.
-- Every diagram component and capability must trace back to an `ARCH-XXX` id, and (depending on which PRD shape exists) a `FEAT-XXX`/`US-XXX` id or a `REQ-XXX` id from the input artifacts — mark anything not traceable as **[TBD]** with a note on what needs confirming.
+- Every diagram component and capability must trace back to an `ARCH-XXX` id, and (depending on which PRD shape exists) a `FEAT-XXX`/`US-XXX` id or a `REQ-XXX` id from the input artifacts — mark anything not traceable as **[TBD]**.
+- **Never leave a `[TBD]` as a silent, unanswered placeholder.** Every one must also be phrased as a specific, answerable question in the completion summary — not "Business Process Flows: TBD," but e.g. "No process-flow/wireframe reference exists for the onboarding capability — is one coming, or should this section state 'not yet designed'?" This is what lets the Architecture Suite Approval gate (see its hard rule) ask the human directly instead of the gap shipping unresolved.
 - Write for a mixed audience — avoid jargon without explanation.
+- When revising this artifact in `EDIT` mode (a new PRD version was approved and the suite orchestrator asked for a patch, not a full regeneration), write the result as a clean, current-state document — never narrate the PRD's version history inline (no "previously X, the PRD changed to Y, so now Z", no before/after callouts). It must read exactly as if generated fresh against the current PRD. What changed and why belongs only in the completion summary, never in the artifact body.
 
 ## Output contract
 
@@ -62,4 +64,4 @@ Human approval status: PENDING
 followed by the full page content in Markdown (the same content that will later be handed to `confluence-publish` verbatim — do not draft a different, shorter version for this file).
 
 ## Completion summary (return to orchestrator)
-List of sections produced, any `[TBD]` markers and what they need, and which input artifacts were missing (if any).
+List of sections produced, every `[TBD]` marker phrased as a direct answerable question, and which input artifacts were missing (if any).

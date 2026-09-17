@@ -17,10 +17,14 @@ confluence:
   # Technology Stack) publish as children of this page.
   parent_page: "5843681284"
   # Enabled 2026-09-17 so solution-architecture-publish-agent can create the three
-  # architecture pages once they're APPROVED -- allow_updates stays false, that's a
-  # separate, still-unrequested permission (never overwrite an existing page here).
+  # architecture pages once they're APPROVED.
   create_if_missing: true
-  allow_updates: false
+  # Enabled 2026-09-17 (DEC-006, workflow/decisions.md) -- explicit human approval to
+  # update the three existing architecture pages (Solution Architecture 5885984847,
+  # Technology Stack 5885657157, Security Architecture 5885821047) with the PRD
+  # v1.1->v1.3 patch content, granted specifically for this /generate-architecture
+  # publish run, not a standing blanket permission.
+  allow_updates: true
   # PRD is resolved by space + keyword + status, not a pinned page -- a re-versioned
   # PRD publishes as a new sibling page (observed 2026-09-17: v1.0 "Agentic Ingredient
   # Demand Forecasting Assistant" id 5884510209 Status:Confirmed, superseded by v1.1
