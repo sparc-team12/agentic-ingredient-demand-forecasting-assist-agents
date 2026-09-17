@@ -16,7 +16,7 @@ Two supported input shapes — use whichever actually exists for this product; d
 - `artifacts/stories/user-stories.md` (if available; proceed without it and note the gap if not yet produced)
 
 **Shape B — standalone PRD (prd-agent convention):**
-- `docs/01-prd/prd-*.md`, matched by product/project name if more than one exists. **Must show `Status: Confirmed`** — if it's still `Draft`, stop and report that architecture cannot be designed against an unconfirmed PRD.
+- `docs/01-prd/prd-*.md`, matched by product/project name if more than one exists. **Must show a terminal, human-signed-off status** — `Confirmed` and `Approved` are both observed conventions across different PRD-authoring runs in this repo, so accept either. If it's still `Draft`, stop and report that architecture cannot be designed against an unconfirmed PRD. If the resolver (`confluence-doc-resolver` Mode `keyword_status`, via `/generate-architecture`) already confirmed this, trust that rather than re-deriving it from a possibly-stale local copy.
 
 If neither shape is found, stop and report which one is missing rather than guessing scope. If Shape B is used, every architecture element traces directly to a `REQ-XXX` id — there is no `FEAT-XXX` layer to go through, and none should be invented.
 

@@ -5,14 +5,16 @@ description: Confluence publication procedure via the Atlassian MCP integration 
 
 # Confluence Publication
 
-This skill is the only place Confluence-write logic lives — `.claude/skills/product-discovery/SKILL.md` calls into it after Gate 1 (the PRD), after Gate 2 (feature/architecture/UI-UX, one call per document), after Gate 4 (estimation/risk, one call per document), after Gate 5 (test strategy), at the Architecture Suite Approval gate, and at Gate 7 (the final assembled package) — never duplicating this logic elsewhere. Only `orchestrator-agent` (`.claude/agents/orchestrator-agent.md`) invokes this skill — it is the sole agent with Confluence/Jira MCP access in this pipeline. (User stories publish to **Jira**, not here — see `orchestrator-agent.md`'s "Publishing user stories to Jira".)
+This skill is the intended place for Confluence-write logic in the discovery pipeline and the architecture suite — `.claude/skills/product-discovery/SKILL.md` calls into it after Gate 1 (the PRD), after Gate 2 (feature/architecture/UI-UX, one call per document), after Gate 4 (estimation/risk, one call per document), after Gate 5 (test strategy), and at Gate 7 (the final assembled package); `solution-architecture-suite-orchestrator-agent` calls into it after its own human approval gate. `orchestrator-agent` (`.claude/agents/orchestrator-agent.md`) is the sole agent with Confluence/Jira access in the discovery pipeline. (User stories publish to **Jira**, not here — see `orchestrator-agent.md`'s "Publishing user stories to Jira".)
+
+**Known exception:** `solution-architecture-publish-agent` and `solution-architecture-publish-resume-agent` hold their own direct Confluence MCP write access and write the architecture-suite pages themselves rather than calling into this skill — a day-2/recovery path for when `solution-architecture-suite-orchestrator-agent`'s normal publish step didn't finish. This predates and doesn't yet follow the required-`ParentPage`/naming-convention discipline below; treat it as a known gap to reconcile, not a pattern to copy elsewhere.
 
 ## Input
 
 | Parameter | Required | Description |
 |---|---|---|
-| `PageSet` | Yes | The set of pages to publish this call, as `{title, body}` pairs, already titled per the `<Document Type> - <Project Name>` naming convention (`orchestrator-agent.md`). Usually one or a handful of pages per call (a single PRD page after Gate 1, one document after Gate 2/4/5, the three Architecture Suite documents, or the final `final-prd.md` content at Gate 7) — never a fixed default set, since which documents exist depends entirely on which gates this workflow has cleared so far. |
-| `ParentPage` | Yes | The Confluence page ID of **this workflow's resolved project folder** (`orchestrator-agent.md`'s "Project identification and Confluence folder", `product-discovery/SKILL.md` §1a) — never `confluence.parent_page` directly. If the caller hasn't resolved a project folder yet, refuse and say so; do not fall back to publishing under the space root. |
+| `PageSet` | Yes | The set of pages to publish this call, as `{title, body}` pairs, already titled per the `<Document Type> - <Project Name>` naming convention (`orchestrator-agent.md`). Usually one or a handful of pages per call (a single PRD page after Gate 1, one document after Gate 2/4/5, the five Architecture Suite/HLD/LLD documents from `solution-architecture-suite-orchestrator-agent`, or the final `final-prd.md` content at Gate 7) — never a fixed default set, since which documents exist depends entirely on which gates this workflow has cleared so far. |
+| `ParentPage` | Yes | The Confluence page ID of **this workflow's resolved project folder** (`orchestrator-agent.md`'s "Project identification and publish destinations", `product-discovery/SKILL.md` §1a; `solution-architecture-suite-orchestrator-agent.md` resolves the same folder the same way for its own workflow) — never `confluence.parent_page` directly. If the caller hasn't resolved a project folder yet, refuse and say so; do not fall back to publishing under the space root. |
 
 ## Precondition (caller's responsibility, verify before invoking)
 
@@ -50,7 +52,9 @@ A project's folder, once created, looks like this once every document type has b
 ├── Test Strategy - <Project Name>          (Gate 5)
 ├── Solution Architecture Overview - <Project Name>  (Architecture Suite workflow, if generated)
 ├── Security Architecture - <Project Name>           (Architecture Suite workflow, if generated)
-└── Technology Stack - <Project Name>                (Architecture Suite workflow, if generated)
+├── Technology Stack - <Project Name>                (Architecture Suite workflow, if generated)
+├── High-Level Design - <Project Name>               (Architecture Suite workflow, if generated)
+└── Low-Level Design - <Project Name>                (Architecture Suite workflow, if generated)
 ```
 
 User stories are **not** a page here — they publish to Jira (see `orchestrator-agent.md`'s "Publishing user stories to Jira"); the PRD page's Traceability Matrix links to them by Jira key/URL instead of duplicating their content here.

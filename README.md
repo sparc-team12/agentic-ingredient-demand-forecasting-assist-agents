@@ -1,6 +1,6 @@
 # agentic-ingredient-demand-forecasting-assist-agents
 
-A human-in-the-loop AI product discovery and planning system, built on Claude Code. You give it a product idea, requirement, ticket, or business problem; a **Product Discovery & Planning Orchestrator** dispatches an entry-point PRD agent and eight specialist subagents to produce a validated PRD package plus a test strategy document. Humans approve at defined gates throughout — this system does **not** autonomously build or ship a product; it accelerates discovery and planning while people stay accountable for requirements, architecture, estimates, risk acceptance, and publication.
+A human-in-the-loop product discovery, architecture, and development-agent system built on Claude Code. The architecture suite converts approved solution architecture into reviewed HLD and implementation-ready LLD; only then may the development orchestrator implement a work item through independent verification and a structured QA handoff. It never treats development completion as QA approval and does not autonomously release or deploy.
 
 ## 1. What this system does
 
@@ -114,10 +114,16 @@ Specialist agents are direct children of the orchestrator — there is no recurs
 | Feature Analyst | `.claude/agents/feature-analyst-agent.md` | `artifacts/features/feature-specification.md` (`FEAT-XXX`) |
 | User Story Analyst | `.claude/agents/user-story-analyst-agent.md` | `artifacts/stories/user-stories.md` (`US-XXX`) |
 | Solution Architect | `.claude/agents/solution-architect-agent.md` | `artifacts/architecture/solution-architecture.md` (`ARCH-XXX`) |
+| HLD Architect | `.claude/agents/solution-hld-agent.md` | `artifacts/architecture/high-level-design.md` (`HLD-XXX`) |
+| LLD Architect | `.claude/agents/solution-lld-agent.md` | `artifacts/architecture/low-level-design.md` (`LLD-XXX`) |
+| Architecture Validator | `.claude/agents/solution-architecture-validator-agent.md` | `artifacts/architecture/architecture-validation.json` and development-readiness gate |
 | UI/UX Designer | `.claude/agents/uiux-designer-agent.md` | `artifacts/design/ui-ux-specification.md` (`UI-XXX`) |
 | Estimation & Cost | `.claude/agents/estimation-cost-agent.md` | `artifacts/estimation/estimation-cost-analysis.md` (`EST-XXX`) |
 | Risk & Compliance | `.claude/agents/risk-compliance-agent.md` | `artifacts/risk/risk-register.md` (`RISK-XXX`) |
 | Test Strategy | `.claude/agents/test-strategy-agent.md` | `artifacts/test-strategy/test-strategy.md` (`TS-XXX`) — guideline for test planning, test case generation, and test automation |
+| Development Orchestrator | `.claude/agents/dev-orchestrator-agent.md` | Per-work-item stage control and `dev-status.json`; terminal state `READY_FOR_QA` |
+| Development specialists | `.claude/agents/dev-*.md`, `planning-sprint-agent.md`, `test-unit-agent.md`, `code-review-agent.md`, `test-verifier-agent.md` | Plan, implementation, tests, reviews, verification, and `qa-handoff.md` under `artifacts/development/<work-item-id>/` |
+| QA E2E | `.claude/agents/test-e2e-agent.md` | Post-handoff `qa-e2e-report.md` against an approved non-production environment |
 
 Each agent file states its input contract, output contract, allowed tools, and what it must **not** decide unilaterally.
 
@@ -141,12 +147,12 @@ No gate above is itself publish approval — every individual Confluence page or
 
 ```text
 .claude/
-  agents/            10 subagent definitions (orchestrator + prd-agent + 8 specialists)
+  agents/            discovery/planning agents plus the development-to-QA pipeline
   skills/
     product-discovery/SKILL.md   master orchestration procedure (dispatch order, gates)
     validation-review/SKILL.md   consistency/completeness/feasibility/quality-security checklist
     confluence-publish/SKILL.md  MCP verification, search-before-create, CREATE vs UPDATE, publish
-  commands/          /product-plan, /orchestrate, /research, /features, /stories,
+  commands/          /product-plan, /orchestrate, /develop, /research, /features, /stories,
                       /architecture, /uiux, /estimate, /risk, /test-strategy, /review,
                       /status, /prd, /publish, /retry, /skip
   CLAUDE.md          repo-level operating rules for Claude Code
@@ -189,6 +195,9 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 /features <workflow-id>                     feature analyst only (requires Gate 1 approved)
 /stories <workflow-id>                      user story analyst only -> Gate 3 (requires Gate 2 approved)
 /architecture <workflow-id>                 solution architect only (requires Gate 1 approved)
+/generate-architecture [id] --repo <path>   separate workflow: architecture suite, HLD, LLD, validation, and
+                                             approval, run by solution-architecture-suite-orchestrator-agent
+                                             (its own gate, independent of Gates 1-7 above)
 /uiux <workflow-id>                         UI/UX designer only (requires feature spec to exist)
 /estimate <workflow-id>                     estimation & cost only (requires Gate 3 approved)
 /risk <workflow-id>                         risk & compliance only -> Gate 4
@@ -199,6 +208,7 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 /retry <workflow-id> <agent>                retry a failed agent
 /skip <workflow-id> <agent>                 skip an agent (requires confirmation)
 /status [workflow-id]                       show workflow state
+/develop <id> <requirement-path> ...        implement one approved work item through READY_FOR_QA
 ```
 
 Individual-document Confluence publishes (PRD, feature/architecture/UI-UX, estimation/risk, test strategy) and the Jira story publish happen inline in the full pipeline right after their gate — there's no separate slash command for each; see `.claude/agents/orchestrator-agent.md`.
@@ -265,3 +275,24 @@ See `SETUP_DECISIONS.md` for the full list, notably:
 11. Confirm the exact Confluence page list at Gate 7 — this updates `PRD - <Project Name>` in place rather than creating a new page.
 12. Check /status <workflow-id> at any point to see where things stand.
 ```
+
+## 15. Development to QA workflow
+
+First run `/generate-architecture [workflow-id] --repo <target-repository>` to produce and approve the HLD and LLD. Then run `/develop <work-item-id> <approved-requirement-path> [--repo <path>] [--test-strategy <path>]`. Development refuses to start unless solution architecture, HLD, and LLD are approved and `architecture-validation.json` says `PASS` and `development_ready: true`.
+
+The development orchestrator runs this deterministic sequence:
+
+```text
+Requirements validation
+  (approved HLD + LLD required)
+  -> repository-aware implementation plan
+  -> independent tech-lead review
+  -> implementation + focused tests
+  -> unit/component test closure
+  -> independent code review (with bounded rework loop)
+  -> clean-room verification
+  -> QA handoff
+  -> READY_FOR_QA (stop)
+```
+
+Evidence is stored under `artifacts/development/<work-item-id>/`. The QA handoff includes acceptance-criterion traceability, changed components, environment/migration notes, verification results, risks, and prioritized QA scenarios. QA can then invoke `test-e2e-agent` against an explicitly approved non-production environment. PR creation, release, and deployment remain separate, explicitly authorized stages.

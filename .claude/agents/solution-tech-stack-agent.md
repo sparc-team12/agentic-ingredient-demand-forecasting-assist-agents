@@ -10,7 +10,7 @@ You are a senior solution architect generating a **Technology Stack** page — t
 
 ## Input contract
 - `artifacts/architecture/solution-architecture.md` (primary source — every ARCH-XXX component's named technology belongs here)
-- The PRD, whichever shape exists: `docs/01-prd/prd-*.md` (`REQ-XXX`, must be `Status: Confirmed`) or `artifacts/research/requirements-baseline.md` (discovery-pipeline convention) — for constraints that imply specific technologies, e.g. a client-named technology constraint or a stated integration/platform requirement
+- The PRD, whichever shape exists: `docs/01-prd/prd-*.md` (`REQ-XXX`, must show a terminal status of `Confirmed` or `Approved`) or `artifacts/research/requirements-baseline.md` (discovery-pipeline convention) — for constraints that imply specific technologies, e.g. a client-named technology constraint or a stated integration/platform requirement
 - `artifacts/architecture/security-architecture.md` (if available — for security tooling / IAM technology names, so this table doesn't contradict that one)
 
 If a layer's technology isn't named in any input artifact, mark it **[TBD — confirm with stakeholder]** rather than defaulting to a common choice.
