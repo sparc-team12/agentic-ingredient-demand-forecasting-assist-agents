@@ -42,7 +42,8 @@ Specialist input/output artifact contracts live in each `.claude/agents/*.md` fi
         "decision": null
       },
       "agents": {
-        "research_requirements": { "status": "COMPLETED", "startedAt": "...", "completedAt": "...", "task": "...", "output": "artifacts/research/requirements-baseline.md", "summary": "...", "errors": [], "revisionCount": 0 },
+        "prd_agent": { "status": "COMPLETED", "startedAt": "...", "completedAt": "...", "task": "...", "output": "artifacts/prd/prd-<slug>.md", "summary": "...", "errors": [], "revisionCount": 0 },
+        "research_requirements": { "status": "COMPLETED", "startedAt": "...", "completedAt": "...", "task": "...", "output": "artifacts/research/requirements-baseline.md", "summary": "dispatched by prd_agent, not directly by the orchestrator, whenever it flagged a research gap", "errors": [], "revisionCount": 0 },
         "feature_analyst": { "status": "NOT_STARTED" },
         "user_story_analyst": { "status": "NOT_STARTED" },
         "solution_architect": { "status": "NOT_STARTED" },
@@ -75,9 +76,9 @@ Update `status.json` (and log an event) after: workflow creation, agent dispatch
 ## 2. Dispatch order and parallelism
 
 ```
-research_requirements
+prd_agent (interviews the human; dispatches research_requirements itself as gaps appear)
         |
-   [GATE 1: REQUIREMENTS_APPROVAL]
+   [GATE 1: REQUIREMENTS_APPROVAL]  <- presents prd_agent's Confirmed PRD
         |
 feature_analyst
         |
@@ -107,7 +108,7 @@ Dispatch each specialist by invoking its agent definition in `.claude/agents/` w
 
 ## 3. Modes (what each command passes in)
 
-- **FULL** (`/product-plan <requirement>`): create a new workflow, run `research_requirements`, stop at Gate 1. On resume after approval, continue the full chain through Gate 5.
+- **FULL** (`/product-plan <requirement>`): create a new workflow, dispatch `prd_agent` with the raw input as given (free-text conversation, ticket, or detailed brief — whatever shape it arrives in), let it interview the human and call `research_requirements` itself as it hits gaps, stop at Gate 1 once `prd_agent` hands back a `Confirmed` PRD. On resume after approval, continue the full chain through Gate 5.
 - **RESUME** (`/product-plan --resume <workflow-id>`): read `status.json` for that workflow, determine `currentGate`/`overallStatus`, and continue from exactly that point — never re-run a `COMPLETED` agent whose artifact still exists and is still the approved input for the next step.
 - **ORCHESTRATE_ONLY** (`/orchestrate --only <agent1,agent2,...>` or `/product-plan --agents ...`): run exactly the named agents (in correct dependency order), reusing existing upstream artifacts, still enforcing any gate that sits between the named agents and their inputs/outputs.
 - **SINGLE_AGENT** (`/research <requirement>`, `/features <workflow-id>`, `/stories <workflow-id>`, `/architecture <workflow-id>`, `/uiux <workflow-id>`, `/estimate <workflow-id>`, `/risk <workflow-id>`): run one specialist directly.
@@ -124,8 +125,8 @@ Dispatch each specialist by invoking its agent definition in `.claude/agents/` w
 
 At every gate: present what was produced, list unresolved questions/risks/contradictions, then stop and wait. Do not proceed on an assumed or implied approval.
 
-- **Gate 0 — Intake**: after parsing the human's request, restate your understanding in a few sentences (problem, scope hints, any constraints/documents/Jira-Confluence references given) and ask for anything critical that's missing before dispatching `research_requirements`.
-- **Gate 1 — Requirements Approval**: present `requirements-baseline.md` + `open-questions.md` (baseline, findings, assumptions, open questions, confidence notes). Require exactly one of `APPROVE`, `REQUEST_CHANGES`, `PROVIDE_CLARIFICATION`, `STOP`. On `REQUEST_CHANGES`/`PROVIDE_CLARIFICATION`, re-run `research_requirements` with the human's input and increment `revisionCount`. On `STOP`, halt the workflow and set `overallStatus: BLOCKED`.
+- **Gate 0 — Intake**: after parsing the human's request, restate your understanding in a few sentences (problem, scope hints, any constraints/documents/Jira-Confluence references given) and ask for anything critical that's missing before dispatching `prd_agent`.
+- **Gate 1 — Requirements Approval**: present the `Confirmed` PRD `prd_agent` produced (its Requirements, Research Context, Assumptions, and Open Questions sections already carry the research findings and confidence notes). Require exactly one of `APPROVE`, `REQUEST_CHANGES`, `PROVIDE_CLARIFICATION`, `STOP`. On `REQUEST_CHANGES`/`PROVIDE_CLARIFICATION`, re-run `prd_agent` with the human's input (amendment flow) and increment `revisionCount`. On `STOP`, halt the workflow and set `overallStatus: BLOCKED`.
 - **Gate 2 — Solution Review**: after `feature_analyst`, `user_story_analyst`, `solution_architect`, `uiux_designer` complete, present a concise cross-domain summary (major features, key stories, architecture summary, major UI/UX flows, dependencies, any contradictions found, open decisions). Require approval before dispatching `estimation_cost`.
 - **Gate 3 — Estimate/Risk Review**: present effort/timeline/cost ranges, major risks, security/compliance concerns, and high-impact assumptions. Require approval before PRD assembly.
 - **Gate 4 — Final PRD Approval**: present the assembled PRD package and validation findings. Require the literal string `APPROVE_AND_PUBLISH`. Any other response stops publication (it does not have to stop the workflow — the human may still want the PRD without publishing).
@@ -149,8 +150,8 @@ Assemble `artifacts/prd/final-prd.md` (create the directory if needed) with sect
 
 ```
 PRD parent page
-├── Executive Summary          (written fresh — 1 paragraph problem, 1 paragraph solution, from the baseline + validated artifacts)
-├── Requirements                <- artifacts/research/requirements-baseline.md
+├── Executive Summary          (written fresh — 1 paragraph problem, 1 paragraph solution, from prd_agent's PRD + validated artifacts)
+├── Requirements                <- artifacts/prd/prd-<slug>.md (prd_agent's Confirmed PRD, the Gate 1 artifact), cross-checked against artifacts/research/requirements-baseline.md
 ├── Feature Specification       <- artifacts/features/feature-specification.md
 ├── User Stories                <- artifacts/stories/user-stories.md
 ├── Solution Architecture       <- artifacts/architecture/solution-architecture.md
@@ -165,7 +166,7 @@ Include the standard metadata block (Workflow ID, Agent: orchestrator, Created, 
 
 ## 8. Confluence publication (`/publish`, Gate 5)
 
-Delegate to the **`confluence-publish`** skill (`.claude/skills/confluence-publish/SKILL.md`) — it owns MCP-connector verification, site/space/parent-page confirmation, search-before-create, CREATE-vs-UPDATE detection, and the actual publish calls, so none of that is duplicated here. Before invoking it, confirm Gate 4 recorded the literal `APPROVE_AND_PUBLISH` decision for this workflow. After it returns, write the resulting page IDs/URLs into `confluence.pages` in `status.json` and append the `PUBLISHED` events it reports to `events.jsonl` (this skill remains the sole writer of `status.json`/`events.jsonl`; `confluence-publish` only returns data, it does not write workflow files itself).
+Delegate to the **`confluence-publish`** skill (`.claude/skills/confluence-publish/SKILL.md`) — it owns MCP-connector verification, site/space/parent-page confirmation, search-before-create, CREATE-vs-UPDATE detection, and the actual publish calls, so none of that is duplicated here. Before invoking it, confirm Gate 4 recorded the literal `APPROVE_AND_PUBLISH` decision for this workflow. After it returns, write the resulting page IDs/URLs into `confluence.pages` in `status.json` and append the `PUBLISHED` events it reports to `events.jsonl` (this skill remains the sole writer of `status.json`/`events.jsonl`; `confluence-publish` only returns data, it does not write workflow files itself). The published package nests under a `PRD` child page under the project's main Confluence page — the same folder `prd_agent` already publishes its own confirmed draft into, so both live in one place.
 
 ## 9. What this skill must never do
 

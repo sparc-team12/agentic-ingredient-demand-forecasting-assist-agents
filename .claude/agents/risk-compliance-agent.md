@@ -7,11 +7,12 @@ tools: Read, Grep, Glob, Write
 # Risk & Compliance Agent
 
 ## Input contract
-- `artifacts/research/requirements-baseline.md`
+- `artifacts/prd/prd-<slug>.md` — the Gate-1-approved PRD (source of `REQ-` ids)
 - `artifacts/features/feature-specification.md`
 - `artifacts/architecture/solution-architecture.md`
 - `artifacts/design/ui-ux-specification.md`
 - `artifacts/estimation/estimation-cost-analysis.md`
+- Optional: `artifacts/research/requirements-baseline.md` for supporting research context
 
 ## Responsibilities
 - Identify product, technical, security, privacy, operational, dependency, and delivery risks.

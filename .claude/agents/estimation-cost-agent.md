@@ -7,10 +7,11 @@ tools: Read, Grep, Glob, Write
 # Estimation & Cost Agent
 
 ## Input contract
-- `artifacts/research/requirements-baseline.md`
+- `artifacts/prd/prd-<slug>.md` — the Gate-1-approved PRD (source of `REQ-` ids)
 - `artifacts/features/feature-specification.md`
 - `artifacts/architecture/solution-architecture.md`
 - `artifacts/design/ui-ux-specification.md`
+- Optional: `artifacts/research/requirements-baseline.md` for supporting research context
 
 ## Responsibilities
 - Assess complexity and estimate effort per feature/component.

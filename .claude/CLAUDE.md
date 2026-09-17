@@ -8,7 +8,7 @@ AI accelerates product discovery and SDLC planning. Humans remain the decision a
 
 ## Where things live
 
-- `.claude/agents/` — the orchestrator + 7 specialist subagents (research, features, stories, architecture, UI/UX, estimation, risk). Each file is the authoritative input/output contract for that agent.
+- `.claude/agents/` — the orchestrator + `prd-agent` (entry point: interviews the human and produces the Confirmed PRD gated at Gate 1) + 7 specialist subagents (research, features, stories, architecture, UI/UX, estimation, risk). Each file is the authoritative input/output contract for that agent.
 - `.claude/skills/product-discovery/SKILL.md` — the full orchestration procedure: dispatch order, gate behavior, PRD assembly. Every command below delegates here (directly, or via one of the two skills below).
 - `.claude/skills/validation-review/SKILL.md` — the consistency/completeness/feasibility/quality-security checklist, used standalone by `/review` and by `product-discovery` before Gate 4.
 - `.claude/skills/confluence-publish/SKILL.md` — MCP verification, search-before-create, CREATE vs UPDATE, and the actual publish calls, used by `/publish` and by `product-discovery`'s Gate 5.

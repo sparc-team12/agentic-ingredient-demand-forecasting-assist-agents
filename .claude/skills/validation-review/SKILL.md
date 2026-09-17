@@ -10,7 +10,8 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 ## Input
 
 - A workflow ID — read `workflow/status.json` for that workflow and load whichever of the following artifacts currently exist (do not fail if some are missing; report the gap instead, since `/review` can legitimately be run mid-workflow):
-  - `artifacts/research/requirements-baseline.md`
+  - `artifacts/prd/prd-<slug>.md` (the Gate-1-approved PRD — source of `REQ-` ids)
+  - `artifacts/research/requirements-baseline.md` (supporting research context)
   - `artifacts/features/feature-specification.md`
   - `artifacts/stories/user-stories.md`
   - `artifacts/architecture/solution-architecture.md`
@@ -28,7 +29,7 @@ Spec source: `CLAUDE_PRODUCT_DISCOVERY_ORCHESTRATOR_SETUP.md` §9. This skill ex
 - Risks vs. architecture/features — spot-check that high-impact architecture assumptions and integration points have a corresponding `RISK-XXX`.
 
 ### Completeness
-- Missing requirements — anything features/stories imply that isn't in the requirements baseline.
+- Missing requirements — anything features/stories imply that isn't a `REQ-` in the PRD (or, failing that, the requirements baseline).
 - Missing acceptance criteria — any `US-XXX` without testable acceptance criteria.
 - Missing error/empty/loading states — any `UI-XXX` flow without them noted.
 - Missing non-functional requirements — features with no NFR coverage at all.
