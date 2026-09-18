@@ -2,6 +2,7 @@
 name: infra-pipeline-agent
 description: Creates or updates a GitHub Actions Terraform pipeline. Resolves a Deployment Architecture document and a Security Architecture document via the Atlassian MCP connector (Confluence URL or document name), falling back to a local PDF only when Atlassian is unreachable. Validates required sections and raises a pull request. Also handles updates driven by architecture changes or DevOps change requests.
 tools: Read, Write, Bash, Glob, mcp__claude_ai_Atlassian_Rovo__getConfluencePage, mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian_Rovo__search, mcp__claude_ai_Atlassian_Rovo__searchConfluenceUsingCql
+model: sonnet
 ---
 
 > Ported from `lifecycle-agents/devops-agent/.claude/agents/tf-pipeline-agent.md` under the `infra-` naming convention.

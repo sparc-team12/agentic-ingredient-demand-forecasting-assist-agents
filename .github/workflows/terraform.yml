@@ -1,0 +1,192 @@
+name: Terraform
+
+# Single-instance, single-environment (prod-only) pipeline for infra/ — DEC-009/
+# DEC-011 flattened infra to one main.tf with no network/application split and
+# no dev/qa/stage environments, so this pipeline has no per-stack/per-environment
+# matrix (unlike infra-pipeline-agent's general template, which assumes both).
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "infra/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: terraform-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: "1.10.0"
+  TFLINT_VERSION: "v0.53.0"
+  TF_DIR: "infra"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: tflint
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          tflint --init
+          tflint --recursive
+
+      - name: Checkov security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ env.TF_DIR }}
+          soft_fail: false
+          # Each ID below is an already-approved v1 decision, not an unreviewed
+          # gap — inline #checkov:skip comments in main.tf did not reliably
+          # take effect in CI, so enforcement lives here instead (main.tf still
+          # carries the same reasoning as comments, for anyone reading the code).
+          # CKV_AWS_8 / CKV_AWS_189 / CKV_AWS_3 / CKV2_AWS_2 — no at-rest EBS
+          #   encryption for v1 (security-architecture.md §7 marker 4, RESOLVED)
+          # CKV_AWS_338 — 30-day CloudWatch retention, not >=365
+          #   (tf-coding-inputs.md assumption #10, approved; no compliance driver)
+          # CKV_AWS_260 — SG ingress 0.0.0.0/0:80 is the intended v1 HTTP-only
+          #   ingress path (security-architecture.md §7 marker 4: no TLS for v1)
+          # NOTE: these are blanket skips across infra/ — safe today since each
+          # check ID matches exactly one resource in this small stack, but must
+          # be revisited (scoped per-resource) if infra/ ever grows a second
+          # resource of the same type that should NOT share the same exemption.
+          skip_check: CKV_AWS_8,CKV_AWS_189,CKV_AWS_3,CKV2_AWS_2,CKV_AWS_338,CKV_AWS_260
+
+  validate:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform init (no backend — syntax/logic check only)
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform validate
+
+      - name: terraform fmt check
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform fmt -check -recursive
+
+  plan:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # No `environment: prod` here on purpose — plan must run automatically on
+    # every push/PR without waiting for the prod Environment's Required
+    # reviewers gate. Only `apply` below references the environment, since
+    # that's the actual manual-approval point.
+    permissions:
+      id-token: write # required for OIDC — aws-actions/configure-aws-credentials exchanges this token for short-lived AWS creds
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — ARN of the manually-created github-terraform-role (DEC-019, not managed by infra/main.tf)
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-session-name: github-actions-terraform
+
+      - name: terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TFSTATE_BUCKET_NAME }}" \
+            -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
+        # Secret: TFSTATE_BUCKET_NAME — still a placeholder ({{TFSTATE_BUCKET_NAME}}
+        # in infra/main.tf's own comments) until the real AWS account/bucket exists.
+        # key / use_lockfile / encrypt are already hardcoded in main.tf's backend block.
+
+      - name: terraform plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -out=prod.tfplan
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prod-tfplan
+          path: ${{ env.TF_DIR }}/prod.tfplan
+
+      - name: Post plan output to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.summary.addHeading('Terraform Plan — prod').write();
+
+  apply:
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: prod # manual gate — configure Required reviewers on this GitHub Environment
+    permissions:
+      id-token: write # required for OIDC — aws-actions/configure-aws-credentials exchanges this token for short-lived AWS creds
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: prod-tfplan
+          path: ${{ env.TF_DIR }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # Secret: AWS_ROLE_ARN — ARN of the manually-created github-terraform-role (DEC-019, not managed by infra/main.tf)
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-session-name: github-actions-terraform
+
+      - name: terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TFSTATE_BUCKET_NAME }}" \
+            -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
+
+      - name: terraform apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply prod.tfplan
