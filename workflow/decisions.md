@@ -457,3 +457,23 @@ Impact:
 
 Related:
 infra/main.tf, .github/workflows/terraform.yml, DEC-015 (superseded — the OIDC provider/role it added is now removed from Terraform), DEC-012
+
+## DEC-020 — Recreated infra/iam-policy.json with concrete values, scoped to what main.tf actually creates
+
+Decision:
+`infra/iam-policy.json` (deleted earlier this session, never recreated) was regenerated after `github-terraform-role` hit `AccessDenied` on `iam:CreateRole` during a real `terraform apply` run via the pipeline. Unlike the original version, this one has concrete values filled in directly (account ID `092338124082`, state bucket `ingredient-forecast-tfstate-092338124082`) rather than `{{ACCOUNT_ID}}`/`{{PROJECT_NAME}}` placeholders, and its statements were derived by reading `main.tf`'s actual resource list (`grep '^resource "aws_'`) rather than reused from the original template, since the resource set has changed substantially since that template was written (KMS key, VPC flow logs, default security group lockdown, single combined instance).
+
+Decided by:
+sparc.team_17@experionglobal.com (session identity) pasted the `AccessDenied: iam:CreateRole` error from a live pipeline run; regenerating a complete policy rather than patching one missing action at a time was a judgment call to avoid a slow drip of one-off `AccessDenied` errors, not a decision the user was separately asked to confirm.
+
+Reason:
+The role could already authenticate (OIDC trust policy fixed in the prior conversation turns) and had enough permissions to create VPC/subnet/security-group/KMS resources, but had zero `iam:*` permissions attached — Terraform's IAM role/instance-profile resources (`aws_iam_role.vpc_flow_logs`, `aws_iam_role.app`, `aws_iam_instance_profile.app`) would have failed one at a time otherwise.
+
+Alternatives considered:
+Telling the user to add just `iam:CreateRole` and let subsequent runs surface the next missing action one by one was considered and rejected as needlessly slow, given the actual resource list was easy to enumerate directly from `main.tf`.
+
+Impact:
+User still needs to attach this policy manually to `github-terraform-role` (as an inline policy or managed policy) — this repo's Terraform does not attach it automatically, consistent with DEC-012/DEC-015's original "you handle permissions yourself" pattern. If `main.tf` gains new resource types in the future, this policy will need a matching update — it is not automatically kept in sync.
+
+Related:
+infra/iam-policy.json, infra/main.tf, DEC-019, DEC-015
