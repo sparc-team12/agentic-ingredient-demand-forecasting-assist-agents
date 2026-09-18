@@ -43,8 +43,8 @@ variable "tags" {
     Project     = "agentic-ingredient-demand-forecasting-assist-agents"
     Environment = "prod"
     ManagedBy   = "terraform"
-    Owner       = "{{OWNER}}"
-    CostCenter  = "{{COST_CENTER}}"
+    Owner       = "sparc-team12"
+    CostCenter  = "unassigned"
   }
 }
 
@@ -89,9 +89,9 @@ variable "app_name" {
 }
 
 variable "app_ami_id" {
-  description = "AMI ID for the instance. No safe default — placeholder {{APP_AMI_ID}} (not stated in any input artifact; region/architecture/OS-patch-level specific)."
+  description = "AMI ID for the instance. Ubuntu Server 26.04 LTS, x86_64, us-east-1 (matches t3.micro's architecture — the Arm variant of this AMI would not boot on a t3 instance family)."
   type        = string
-  default     = "{{APP_AMI_ID}}"
+  default     = "ami-0b6d9d3d33ba97d99"
 }
 
 variable "app_instance_type" {
@@ -294,7 +294,7 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "app" {
   name        = "${var.app_name}-sg"
-  description = "Application instance — inbound HTTP from the internet; outbound HTTPS only (Gemini API)"
+  description = "Application instance - inbound HTTP from the internet; outbound HTTPS only (Gemini API)"
   vpc_id      = aws_vpc.this.id
 
   ingress {
