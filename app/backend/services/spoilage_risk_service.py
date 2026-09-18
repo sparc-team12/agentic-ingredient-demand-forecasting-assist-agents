@@ -81,13 +81,21 @@ def _get_ingredient_or_404(db: Session, ingredient_id: int) -> Ingredient:
 
 
 def evaluate_spoilage_risk(
-    ingredient_id: int, db: Session, *, anchor: date | None = None
+    ingredient_id: int,
+    db: Session,
+    *,
+    anchor: date | None = None,
+    scenario_adjustments: list[demand_projection_service.ScenarioAdjustment] | None = None,
 ) -> SpoilageRiskResult | None:
     """US-007/US-008/US-009/US-029. Returns `None` when the ingredient is
     non-perishable, has no recorded stock/use-by date, or is not at
     spoilage risk. Raises `404` for an unknown `ingredient_id`. `anchor`
     defaults to `date.today()` — see
-    `stockout_risk_service.evaluate_stockout_risk` for the same pattern."""
+    `stockout_risk_service.evaluate_stockout_risk` for the same pattern.
+
+    `scenario_adjustments` (ACRI-49..52, optional): forwarded verbatim to
+    `project_ingredient_demand_series` — `None` (the default) reproduces
+    the exact pre-what-if behavior."""
     today = anchor if anchor is not None else date.today()
     ingredient = _get_ingredient_or_404(db, ingredient_id)
 
@@ -108,7 +116,11 @@ def evaluate_spoilage_risk(
         cumulative_demand = 0.0
     else:
         series = demand_projection_service.project_ingredient_demand_series(
-            ingredient_id, days_until_use_by, db, start_date=today
+            ingredient_id,
+            days_until_use_by,
+            db,
+            start_date=today,
+            scenario_adjustments=scenario_adjustments,
         )
         relevant_days = [day for day in series.series if day.date <= use_by_date]
         cumulative_demand = sum(day.total for day in relevant_days)

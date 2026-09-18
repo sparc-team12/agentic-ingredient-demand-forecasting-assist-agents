@@ -245,12 +245,85 @@ class IngredientDemandSeries:
     series: list[IngredientDemandSeriesDay]
 
 
+@dataclass(frozen=True)
+class ScenarioAdjustment:
+    """One what-if adjustment (ACRI-49..52): `extra_servings` additional
+    servings of `dish_id` on `date`, purely in-memory — never written to
+    the database. Applied by `project_ingredient_demand_series` as
+    ``extra_servings * recipe_quantity_per_serving`` extra demand on that
+    date, for every ingredient present in that dish's recipe (a no-op for
+    an ingredient/date combination the adjustment doesn't touch)."""
+
+    dish_id: int
+    date: date
+    extra_servings: int
+
+
+def _scenario_extra_for_ingredient(
+    ingredient_id: int,
+    day: date,
+    scenario_adjustments: list[ScenarioAdjustment] | None,
+    db: Session,
+) -> tuple[float, list[ContributingDish]]:
+    """The extra demand (and its own `ContributingDish` breakdown entries,
+    for traceability) that `scenario_adjustments` contribute to
+    `ingredient_id` on `day`. Returns `(0.0, [])` when no adjustment
+    targets this ingredient/day — the default, unscenario'd path is
+    untouched. Purely in-memory: reads `RecipeLine`/`Dish` rows already in
+    the session, writes nothing."""
+    if not scenario_adjustments:
+        return 0.0, []
+
+    extra_total = 0.0
+    extra_dishes: list[ContributingDish] = []
+    for adjustment in scenario_adjustments:
+        if adjustment.date != day:
+            continue
+        line = (
+            db.execute(
+                select(RecipeLine).where(
+                    RecipeLine.dish_id == adjustment.dish_id,
+                    RecipeLine.ingredient_id == ingredient_id,
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if line is None:
+            # This dish's recipe doesn't use this ingredient at all —
+            # not a gap, just nothing to add.
+            continue
+        dish = db.get(Dish, adjustment.dish_id)
+        dish_name = dish.name if dish is not None else f"dish#{adjustment.dish_id}"
+        contribution = adjustment.extra_servings * line.quantity_per_serving
+        extra_total += contribution
+        extra_dishes.append(
+            ContributingDish(
+                dish_id=adjustment.dish_id,
+                dish_name=f"{dish_name} (what-if: +{adjustment.extra_servings} servings)",
+                projected_dish_demand=float(adjustment.extra_servings),
+                quantity_per_serving=line.quantity_per_serving,
+                unit=line.unit,
+                contribution=contribution,
+                trace=DishProjectionTrace(
+                    weekday=day.weekday(),
+                    weekday_name=_WEEKDAY_NAMES[day.weekday()],
+                    data_points=[],
+                    weighted_average=0.0,
+                    gap=False,
+                ),
+            )
+        )
+    return extra_total, extra_dishes
+
+
 def project_ingredient_demand_series(
     ingredient_id: int,
     horizon_days: int,
     db: Session,
     *,
     start_date: date | None = None,
+    scenario_adjustments: list[ScenarioAdjustment] | None = None,
 ) -> IngredientDemandSeries:
     """The full forward-horizon projection series for one ingredient: one
     entry per day from `start_date + 1` to `start_date + horizon_days`
@@ -264,6 +337,12 @@ def project_ingredient_demand_series(
     read — the only wall-clock-dependent step is choosing the anchor date,
     which happens once, at the boundary, not inside the per-day
     calculation (US-001 AC4).
+
+    `scenario_adjustments` (ACRI-49..52, optional, defaults to `None`):
+    zero or more in-memory `ScenarioAdjustment`s layered on top of the
+    normal projection — see `_scenario_extra_for_ingredient`. `None`
+    (the default) reproduces the exact pre-what-if behavior; every existing
+    caller that never passes this argument is unaffected.
     """
     if horizon_days < 1:
         raise HTTPException(
@@ -277,11 +356,14 @@ def project_ingredient_demand_series(
     for offset in range(1, horizon_days + 1):
         day = anchor + timedelta(days=offset)
         projection = project_ingredient_demand(ingredient_id, day, db)
+        extra_total, extra_dishes = _scenario_extra_for_ingredient(
+            ingredient_id, day, scenario_adjustments, db
+        )
         series.append(
             IngredientDemandSeriesDay(
                 date=day,
-                total=projection.total,
-                contributing_dishes=projection.contributing_dishes,
+                total=projection.total + extra_total,
+                contributing_dishes=[*projection.contributing_dishes, *extra_dishes],
             )
         )
 

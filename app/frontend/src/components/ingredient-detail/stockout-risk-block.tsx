@@ -1,6 +1,10 @@
 // Stockout risk detail block (ACRI-38..41): stockout date, order-by date,
 // suggested order quantity, severity badge, and — when applicable — a
 // visible safety-margin-gap flag (never silently treated as "no gap").
+// Also links into the Chat Agent (ACRI-45) so the manager can ask why
+// this ingredient is flagged, with the ingredient already in focus.
+import { Link } from "react-router-dom";
+
 import { GapFlag } from "@/components/ingredients-suppliers/gap-flag";
 import { SeverityBadge } from "@/components/ingredient-detail/severity-badge";
 import type { StockoutRisk } from "@/lib/risk-api";
@@ -38,6 +42,11 @@ export function StockoutRiskBlock({ stockout }: StockoutRiskBlockProps) {
         when={stockout.lead_time_gap}
         text="No supplier lead time on file — order-by date treats it as 0 days"
       />
+      <div className="btn-row">
+        <Link to={`/chat-agent?ingredientId=${stockout.ingredient_id}`} className="btn">
+          Ask why flagged
+        </Link>
+      </div>
     </section>
   );
 }

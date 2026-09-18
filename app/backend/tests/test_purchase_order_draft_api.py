@@ -149,9 +149,7 @@ def test_draft_correct_for_a_stockout_flagged_ingredient_ac1(
     assert body["unit"] == "kg"
     assert body["supplier_name"] == "Acme Produce Co"
     assert body["supplier_gap"] is False
-    assert body["required_delivery_date"] == str(
-        today + timedelta(days=3) - timedelta(days=5 + 2)
-    )
+    assert body["required_delivery_date"] == str(today + timedelta(days=3) - timedelta(days=5 + 2))
     assert body["suggested_quantity"] == pytest.approx(5 * DAILY_TOTAL)
 
 

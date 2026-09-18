@@ -471,3 +471,54 @@ table.data-table {
   color: var(--color-text);
   margin: 0;
 }
+
+/* ---------- Chat Agent (ACRI-45/ACRI-49..52) ---------- */
+
+.chat-agent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chat-agent__messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.chat-agent__message {
+  max-width: 75%;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.chat-agent__message--user {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 500;
+}
+
+.chat-agent__message--agent {
+  align-self: flex-start;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.chat-agent__composer {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.chat-agent__composer input[type="text"] {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+}

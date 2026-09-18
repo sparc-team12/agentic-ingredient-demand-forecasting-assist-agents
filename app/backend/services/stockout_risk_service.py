@@ -94,14 +94,22 @@ def _get_ingredient_or_404(db: Session, ingredient_id: int) -> Ingredient:
 
 
 def evaluate_stockout_risk(
-    ingredient_id: int, db: Session, *, anchor: date | None = None
+    ingredient_id: int,
+    db: Session,
+    *,
+    anchor: date | None = None,
+    scenario_adjustments: list[demand_projection_service.ScenarioAdjustment] | None = None,
 ) -> StockoutRiskResult | None:
     """US-003/US-004/US-005/US-006. Returns `None` when the ingredient is
     not at stockout risk, or has no recorded `CurrentStock` snapshot to
     evaluate against (see module docstring). Raises `404` for an unknown
     `ingredient_id`. `anchor` defaults to `date.today()`; passing it
     explicitly keeps the maths itself free of a wall-clock read, mirroring
-    `project_ingredient_demand_series`."""
+    `project_ingredient_demand_series`.
+
+    `scenario_adjustments` (ACRI-49..52, optional): forwarded verbatim to
+    `project_ingredient_demand_series` — `None` (the default) reproduces
+    the exact pre-what-if behavior."""
     today = anchor if anchor is not None else date.today()
     ingredient = _get_ingredient_or_404(db, ingredient_id)
 
@@ -121,7 +129,11 @@ def evaluate_stockout_risk(
     stockout_horizon_days = demand_projection_service.DEFAULT_FORWARD_HORIZON_DAYS
     series_horizon = max(stockout_horizon_days, lead_time_days or 0)
     series = demand_projection_service.project_ingredient_demand_series(
-        ingredient_id, series_horizon, db, start_date=today
+        ingredient_id,
+        series_horizon,
+        db,
+        start_date=today,
+        scenario_adjustments=scenario_adjustments,
     )
 
     cumulative = 0.0

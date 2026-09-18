@@ -2,6 +2,10 @@
 // (INR), severity badge, and — when applicable — a visible
 // suppressed-by-threshold note (the raw cost is still shown; suppression
 // only affects whether a *caller's visible list* would include this item).
+// Also links into the Chat Agent (ACRI-45) so the manager can ask why
+// this ingredient is flagged, with the ingredient already in focus.
+import { Link } from "react-router-dom";
+
 import { SeverityBadge } from "@/components/ingredient-detail/severity-badge";
 import type { SpoilageRisk } from "@/lib/risk-api";
 
@@ -32,6 +36,11 @@ export function SpoilageRiskBlock({ spoilage }: SpoilageRiskBlockProps) {
           full.
         </p>
       )}
+      <div className="btn-row">
+        <Link to={`/chat-agent?ingredientId=${spoilage.ingredient_id}`} className="btn">
+          Ask why flagged
+        </Link>
+      </div>
     </section>
   );
 }

@@ -24,3 +24,9 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.32
 python-dotenv==1.2.3
+
+# Chat Agent (DEC-006): Google Gemini API client. Reads GEMINI_API_KEY from
+# the environment automatically (see services/llm_client.py). Not a
+# self-hosted model per ARCH-015/ARCH-017 — DEC-006 documents and accepts
+# the resulting real external network dependency for this one feature.
+google-genai==2.24.0

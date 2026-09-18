@@ -29,7 +29,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <span className="topbar__brand">Ingredient Demand Forecasting Assistant</span>
+        <span className="topbar__brand">StockSense</span>
         {isAuthenticated && (
           <nav className="topbar__nav" aria-label="Main">
             {SCREENS.map((screen) => (

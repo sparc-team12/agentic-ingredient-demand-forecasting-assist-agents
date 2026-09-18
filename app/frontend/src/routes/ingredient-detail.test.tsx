@@ -3,6 +3,7 @@
 // neither-flagged state, and the severity badge's exact text alongside its
 // color.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { apiClient, ApiError } from "@/lib/api-client";
@@ -86,8 +87,16 @@ function mockApi(risk: IngredientRisk) {
   });
 }
 
+function renderRoute() {
+  return render(
+    <MemoryRouter>
+      <IngredientDetailRoute />
+    </MemoryRouter>,
+  );
+}
+
 async function renderAndSelectIngredient() {
-  render(<IngredientDetailRoute />);
+  renderRoute();
   await screen.findByRole("combobox", { name: /ingredient/i });
   fireEvent.change(screen.getByRole("combobox", { name: /ingredient/i }), {
     target: { value: "1" },
@@ -98,7 +107,7 @@ describe("IngredientDetailRoute", () => {
   it("renders a loading state before the ingredient list resolves", () => {
     vi.mocked(apiClient.get).mockReturnValue(new Promise(() => {}));
 
-    render(<IngredientDetailRoute />);
+    renderRoute();
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
@@ -106,7 +115,7 @@ describe("IngredientDetailRoute", () => {
   it("renders a visible error message if the ingredient list fetch rejects", async () => {
     vi.mocked(apiClient.get).mockRejectedValue(new ApiError(401, "Not authenticated"));
 
-    render(<IngredientDetailRoute />);
+    renderRoute();
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Not authenticated");
   });
