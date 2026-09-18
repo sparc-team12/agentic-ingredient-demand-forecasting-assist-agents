@@ -1,6 +1,6 @@
 ---
 name: dev-orchestrator-agent
-description: Runs one approved work item end to end through requirements validation, repository-aware planning, tech-lead review, implementation, unit testing, code review/rework, final verification, and QA handoff.
+description: Runs one approved work item end to end through project initialization/verification, requirements validation, planning, tech-lead review, implementation, testing, review/rework, final verification, and QA handoff.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -16,6 +16,7 @@ Require:
 
 - a stable `work_item_id`
 - repository root
+- project name/ID when the repository is greenfield
 - approved requirement source (ticket, story, feature, CR, or PRD requirement)
 - approved `artifacts/architecture/solution-architecture.md`
 - approved `artifacts/architecture/high-level-design.md`
@@ -29,21 +30,28 @@ Read `config/project.yaml` for development limits and artifact root. If the bloc
 
 Before creating development state, confirm the HLD and LLD metadata show `Human approval status: APPROVED` and that validation identifiers match the current source artifacts. Missing, draft, failed, or stale design evidence routes back to `orchestrator-agent`'s Architecture Suite / HLD / LLD workflow (`/generate-architecture`); development must not compensate by designing during planning.
 
+Classify the repository before requirements validation:
+
+- Existing buildable repository with stack-compatible manifests/source: record project initialization as `SKIPPED` and preserve it.
+- Missing/empty greenfield target: dispatch `dev-scaffold-agent` and require `<artifact_dir>/project-initialization.json` with `status: PASS`.
+- Partial or stack-conflicting target: stop as `BLOCKED`; never scaffold over it.
+
 ## Fast, safe stage sequence
 
-1. **Validate requirements** — `dev-requirements-validator-agent` → `requirements-validation.json`.
-2. **Plan** — `planning-sprint-agent` → `implementation-plan.md`.
-3. **Review plan** — `dev-tech-lead-agent` → `tech-lead-review.json`.
+1. **Initialize/verify project** — `dev-scaffold-agent` for greenfield targets → `project-initialization.json`; safely skip for a compatible existing project.
+2. **Validate requirements** — `dev-requirements-validator-agent` → `requirements-validation.json`.
+3. **Plan** — `planning-sprint-agent` → `implementation-plan.md`.
+4. **Review plan** — `dev-tech-lead-agent` → `tech-lead-review.json`.
    - On `FAIL`, return to planning. Default maximum: two automatic revision rounds; then stop with the unresolved findings.
-4. **Implement** — `dev-developer-agent` → source/test changes + `implementation.md`.
-5. **Close unit-test gaps** — `test-unit-agent` → `unit-test-report.md`.
+5. **Implement** — `dev-developer-agent` → source/test changes + `implementation.md`.
+6. **Close unit-test gaps** — `test-unit-agent` → `unit-test-report.md`.
    - Product-code failure returns to development; test-only failure returns to the unit-test agent.
-6. **Independent code review** — `code-review-agent` → `code-review.json`.
+7. **Independent code review** — `code-review-agent` → `code-review.json`.
    - On `FAIL`, return to development, rerun unit tests, then rereview. Default maximum: three review/rework rounds; never waive Critical/Major findings to meet a deadline.
-7. **Reproduce verification** — `test-verifier-agent` → `development-verification.json`.
+8. **Reproduce verification** — `test-verifier-agent` → `development-verification.json`.
    - A regression returns to development; environment/tooling `BLOCKED` stops the flow.
-8. **Package QA handoff** — `dev-qa-handoff-agent` → `qa-handoff.md`.
-9. Set status `READY_FOR_QA` and stop. QA/e2e execution requires a separate explicit handoff.
+9. **Package QA handoff** — `dev-qa-handoff-agent` → `qa-handoff.md`.
+10. Set status `READY_FOR_QA` and stop. QA/e2e execution requires a separate explicit handoff.
 
 Stages are sequential because each consumes the prior artifact. Parallelism is allowed only for independent read-only checks with no shared output file.
 
@@ -76,6 +84,7 @@ Maintain `<artifact_dir>/dev-status.json` as the single orchestration record:
   "plan_round": 1,
   "review_round": 0,
   "stages": {
+    "project_initialization": "NOT_STARTED",
     "requirements": "PASS",
     "planning": "RUNNING",
     "tech_lead": "NOT_STARTED",
@@ -91,6 +100,8 @@ Maintain `<artifact_dir>/dev-status.json` as the single orchestration record:
 ```
 
 Allowed overall statuses: `RUNNING`, `BLOCKED`, `FAILED`, `READY_FOR_QA`. Update state after every transition and artifact check. Only this orchestrator writes `dev-status.json`.
+
+Allowed stage statuses: `NOT_STARTED`, `RUNNING`, `PASS`, `SKIPPED`, `FAIL`, `BLOCKED`.
 
 ## Integrity rules
 
