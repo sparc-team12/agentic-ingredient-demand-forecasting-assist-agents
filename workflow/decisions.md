@@ -418,6 +418,26 @@ Port 22 remains open to the entire internet on the production instance's securit
 Related:
 .github/workflows/terraform.yml, infra/main.tf (aws_security_group.app SSH ingress), DEC-017 (egress scoping — different rule, same resource)
 
+## DEC-022 — Add HTTP (port 80) egress, correcting a wrong assumption from DEC-017
+
+Decision:
+Added a second egress rule to `aws_security_group.app` for port 80 (HTTP), alongside the existing 443 (HTTPS) rule. `deploy.yml`'s `apt-get install python3-venv` step failed with "Network is unreachable" against every Ubuntu package mirror (`security.ubuntu.com`, `us-east-1.ec2.archive.ubuntu.com`) — this AMI's default `sources.list` uses plain HTTP, not HTTPS.
+
+Decided by:
+sparc.team12@experionglobal.com pasted the `apt-get` failure log and asked to fix all errors found; this was a direct, unambiguous root-cause fix, not a judgment call requiring confirmation.
+
+Reason:
+DEC-017 scoped egress to 443-only based on an explicit assumption ("most current apt/yum mirrors are HTTPS-only already") that turned out to be wrong for this specific Ubuntu AMI's default configuration. The fix is narrow and factual, not a re-opening of the broader egress-scoping decision.
+
+Alternatives considered:
+Reconfiguring `/etc/apt/sources.list` to use HTTPS mirrors instead of opening port 80 was considered and rejected — more moving parts (editing OS-level config in the deploy script) for a security benefit that's marginal, since port 80 traffic to public package mirrors isn't a sensitive data-confidentiality concern the way the earlier Gemini-API egress question (marker 9) was.
+
+Impact:
+`aws_security_group.app` now permits both HTTP and HTTPS egress. This is a narrower, correctly-scoped exposure compared to DEC-009's original "all ports" egress that DEC-017 replaced — still not unrestricted, just two specific ports instead of one.
+
+Related:
+infra/main.tf (aws_security_group.app), DEC-017 (corrected), .github/workflows/deploy.yml (python3-venv install step)
+
 ## DEC-017 — Scope security-group egress to HTTPS (443) only, resolving the CKV_AWS_382 finding and security-architecture.md's egress-scoping TBD
 
 Decision:
