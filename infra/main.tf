@@ -94,6 +94,12 @@ variable "app_key_name" {
   default     = "ingredient-forecast-app-prod-key"
 }
 
+variable "ssh_ingress_cidr_blocks" {
+  description = "CIDR blocks allowed to SSH into the instance (deploy.yml's appleboy/ssh-action needs this open, or it can never connect at all - port 22 was missing entirely until this variable was added). Defaults wide open; override with your own static IP/32 once known - GitHub-hosted runners have no fixed egress IP, so this can't be narrowed to \"just GitHub\" without a self-hosted runner or switching to SSM Session Manager instead of direct SSH."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "app_ami_id" {
   description = "AMI ID for the instance. Ubuntu Server 26.04 LTS, x86_64, us-east-1 (matches t3.micro's architecture — the Arm variant of this AMI would not boot on a t3 instance family)."
   type        = string
@@ -302,6 +308,14 @@ resource "aws_security_group" "app" {
   name_prefix = "${var.app_name}-sg-" # not a fixed `name` - AWS appends a random unique suffix, which is what actually lets create_before_destroy (below) work: a fixed name would collide with the still-existing old SG when Terraform tries to create the replacement first
   description = "Application instance - inbound HTTP (frontend) and backend API port; outbound HTTPS only (Gemini API)"
   vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "SSH administration - required for deploy.yml's SSH-based deploy; was entirely missing before, causing every deploy attempt to time out"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.ssh_ingress_cidr_blocks
+  }
 
   ingress {
     description = "HTTP (frontend static files, served on port 80)"
