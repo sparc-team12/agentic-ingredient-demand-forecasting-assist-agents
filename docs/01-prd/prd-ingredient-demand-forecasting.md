@@ -23,7 +23,7 @@ Food cost is one of the largest controllable line items in a restaurant or hotel
 - Ongoing data entry — no screens for logging daily sales, receiving deliveries, or recording stock counts. (Clarified in v1.2: a one-time initial load of the six Input Data categories is in scope — see REQ-037–REQ-041 and the "Data setup" requirements subsection below. This Non-Goal excludes only recurring/day-to-day entry after that initial load.)
 - Unit conversion — units are guaranteed consistent as supplied; the system does not convert between them.
 - Scenario persistence — what-if results are transient; no saving, naming or comparing of scenarios.
-- Accounts and permissions — single user, no login, no roles.
+- Additional roles or permission tiers beyond the two named personas — kitchen-manager and fb-manager each authenticate individually with their own email/password (REQ-043, REQ-044); the system adds no further roles, admin tiers, or granular permissions beyond those two personas. The two personas have identical access once authenticated — no restricted or aggregate-only view for fb-manager (resolved OQ-9, v1.6). (This Non-Goal previously read "single user, no login, no roles" in v1.3, then, briefly and incorrectly, "single shared login credential set" in v1.4, then hedged on per-persona access in v1.5 — all superseded by the per-user login requirement and the identical-access resolution.)
 - Multi-site operation — one kitchen only.
 - Mobile-specific interface — desktop or tablet browser is sufficient.
 - Compliance controls — no personal, customer or payment data is involved.
@@ -110,7 +110,7 @@ Unit consistency is guaranteed by the client: for any given ingredient, recipe q
 
 ### Should Have
 
-None identified — the client specified the full requirement set above as required for v1 acceptance, with no should/could tier. The client's own framing (§9 of the intake document) treats this list as a ceiling, not a starting point: under time pressure, the six-step acceptance sequence (see Success Metrics) defines the minimum that must work.
+None identified — the client specified the full requirement set above as required for v1 acceptance, with no should/could tier.
 
 ### Could Have (later)
 
@@ -129,13 +129,13 @@ None identified — see note under Should Have.
 
 ## Constraints
 
-- **Fixed-deadline build.** This is a fixed-deadline delivery per the client's own requirements document (§9). Scope as written is a ceiling, not a starting point. Where time is short, the six-step acceptance sequence (see Success Metrics) defines what must work; anything not serving those six steps should be cut rather than partially built.
-- Supplier lead times are treated as fixed, an accepted simplification — lead-time variability is explicitly not modelled, even though the client notes a late delivery against a tight order-by date is exactly the failure this product exists to prevent.
+- **Fixed-deadline build.** Scope as written is a ceiling, not a starting point; the six-step acceptance sequence (Success Metrics) defines what must work under time pressure.
+- Supplier lead times are treated as fixed, an accepted simplification.
 - The menu is assumed stable across the 12-week period covered by the sales history.
-- The projection is expected to be directionally useful, not precise to the gram; value lies in flagging the right ingredients with the right urgency.
+- The projection is expected to be directionally useful, not precise to the gram.
 - Platform: desktop or tablet browser only.
-- Single user, no login, no roles.
-- Data is supplied, not sourced — see Input Data for the full itemized breakdown per input. The build does not source, infer or estimate any of it.
+- Per-user login for the two named personas (kitchen-manager, fb-manager), each with their own email/password (REQ-043/REQ-044); no additional roles or permission tiers beyond those two personas.
+- Data is supplied, not sourced — see Input Data.
 - Currency is INR throughout.
 
 ## Success Metrics

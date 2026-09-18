@@ -1,0 +1,18 @@
+{
+  "name": "ingredient-demand-forecasting-assistant",
+  "private": true,
+  "description": "Scaffold-only root workspace for the Agentic Ingredient Demand Forecasting Assistant. No business logic lives here; see app/frontend (npm workspace) and app/backend (separate pip/FastAPI project, not an npm workspace member - see app/backend/requirements*.txt and README.md for its commands).",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace frontend",
+    "lint:frontend": "npm run lint --workspace frontend",
+    "typecheck:frontend": "npm run typecheck --workspace frontend",
+    "build:frontend": "npm run build --workspace frontend",
+    "test:frontend": "npm run test --workspace frontend"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

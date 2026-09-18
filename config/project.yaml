@@ -79,6 +79,7 @@ quality:
 development:
   enabled: true
   artifacts_root: "artifacts/development"
+  initialize_greenfield_projects: true
   require_approved_hld: true
   require_approved_lld: true
   require_architecture_validation: true

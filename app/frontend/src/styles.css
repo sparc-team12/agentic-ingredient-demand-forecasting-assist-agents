@@ -1,0 +1,524 @@
+/* Application visual design. Establishes the design tokens (color, spacing,
+   typography, elevation) and shared layout/component classes used across
+   every screen. No design system was named by any approved architecture
+   document (tech-stack.md §3, ui-ux spec Open Item 8), so this is authored
+   fresh for the app — a light, utilitarian look suited to a kitchen-manager
+   tool used on tablets/desktops, per the Design Document's stated
+   responsive/legibility constraints (severity always shown as text, never
+   color alone; legible under kitchen lighting). */
+
+:root {
+  color-scheme: light;
+
+  /* Color tokens */
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-border: #d9dee3;
+  --color-border-strong: #b9c1ca;
+  --color-text: #1c2530;
+  --color-text-muted: #5b6774;
+  --color-primary: #2f5d50;
+  --color-primary-hover: #244a40;
+  --color-primary-contrast: #ffffff;
+  --color-danger: #b3261e;
+  --color-danger-bg: #fdecea;
+  --color-danger-border: #f3b9b4;
+  --color-warning: #7a4b00;
+  --color-warning-bg: #fff2df;
+  --color-warning-border: #f0cd93;
+  --color-low: #1f5f45;
+  --color-low-bg: #e6f4ec;
+  --color-low-border: #a9d9bd;
+  --color-focus: #2f6fed;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 40, 0.06), 0 1px 1px rgba(20, 30, 40, 0.04);
+  --shadow-md: 0 4px 12px rgba(20, 30, 40, 0.08);
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 var(--space-4);
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+}
+
+p {
+  margin: 0 0 var(--space-3);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- App shell / top bar ---------- */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.topbar__brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.topbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.topbar__link {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.topbar__link:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.topbar__link--active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.topbar__link--active:hover {
+  background: var(--color-primary-hover);
+  color: var(--color-primary-contrast);
+}
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.app-shell__content {
+  flex: 1;
+  width: 100%;
+}
+
+/* ---------- Page layout ---------- */
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+}
+
+.page__header {
+  margin-bottom: var(--space-5);
+}
+
+.page__subtitle {
+  color: var(--color-text-muted);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+/* Centered single-card layout, used for the login screen */
+.centered-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+}
+
+/* ---------- Card ---------- */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+.card + .card {
+  margin-top: var(--space-5);
+}
+
+.card--narrow {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--small {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.825rem;
+}
+
+.btn-row {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* ---------- Forms ---------- */
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="password"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.field input[type="text"]:focus,
+.field input[type="email"]:focus,
+.field input[type="password"]:focus,
+.field input[type="number"]:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--color-focus);
+}
+
+.field--checkbox label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.field--checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
+.form-card {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* ---------- Tables ---------- */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.data-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-bg);
+}
+
+.empty-state {
+  color: var(--color-text-muted);
+  padding: var(--space-4) 0;
+}
+
+/* ---------- Alerts / badges ---------- */
+
+.alert {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-4);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge--warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+/* Severity bands (ACRI-41/ACRI-64): same badge structure as
+   `.badge--warning` above, just 3 more color variants — severity itself is
+   always also shown as exact text ("Critical"/"High"/"Low"), never by
+   color alone. */
+.badge--critical {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+}
+
+.badge--high {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+.badge--low {
+  background: var(--color-low-bg);
+  color: var(--color-low);
+  border: 1px solid var(--color-low-border);
+}
+
+.badge::before {
+  content: "!";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: currentColor;
+  color: var(--color-warning-bg);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.hint-text {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+/* Risk Dashboard's single aggregate total-waste-exposure figure
+   (ACRI-58 US-023) — needs to read as large/prominent per the AC; no
+   other existing class provides that, so this is the one new rule added
+   for this batch. */
+.aggregate-exposure__value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ---------- Chat Agent (ACRI-45/ACRI-49..52) ---------- */
+
+.chat-agent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chat-agent__messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.chat-agent__message {
+  max-width: 75%;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.chat-agent__message--user {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 500;
+}
+
+.chat-agent__message--agent {
+  align-self: flex-start;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.chat-agent__composer {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.chat-agent__composer input[type="text"] {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+}

@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-61",
+  "status": "PASS",
+  "plan_checksum": "sha256:cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276",
+  "preconditions_verified": {
+    "code-review.json": "round 2, status PASS, plan_checksum matches",
+    "implementation-plan.md": "present; sha256 recomputed fresh = cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276, matches plan_checksum in tech-lead-review.json/implementation.md/unit-test-report.md/code-review.json",
+    "tech-lead-review.json": "PASS (1 MINOR resolved, 2 SUGGESTION non-blocking)",
+    "implementation.md": "status COMPLETED",
+    "unit-test-report.md": "status PASS",
+    "workflow/decisions.md DEC-004/DEC-005": "confirmed present; explicitly authorizes bypassing the HLD/LLD/architecture-validation gate for all ACRI stories and supersedes PRD with Jira stories as requirement source. No HLD/LLD absence finding raised as a failure per this governing decision."
+  },
+  "commands": [
+    {"command": "app/backend/.venv/Scripts/python.exe -m pytest -q (from app/backend)", "exit_code": 0, "result": "PASS", "evidence": "91 passed, 4 warnings (pre-existing StarletteDeprecationWarning) in 61.30s — matches code-review.json/unit-test-report.md exactly"},
+    {"command": "app/backend/.venv/Scripts/python.exe -m ruff check . (from app/backend)", "exit_code": 0, "result": "PASS", "evidence": "All checks passed! — matches code-review.json"},
+    {"command": "app/backend/.venv/Scripts/python.exe -m black --check . (from app/backend)", "exit_code": 0, "result": "PASS", "evidence": "33 files would be left unchanged — matches code-review.json"},
+    {"command": "app/backend/.venv/Scripts/python.exe -m mypy . (from app/backend)", "exit_code": 0, "result": "PASS", "evidence": "Success: no issues found in 33 source files — matches code-review.json"},
+    {"command": "npm run test --workspace frontend -- --run (from app)", "exit_code": 0, "result": "PASS", "evidence": "9 test files, 44 tests passed — matches code-review.json/unit-test-report.md exactly, incl. all 3 ACRI-66 files (login-form.test.tsx 3/3, require-auth.test.tsx 3/3, App.test.tsx 3/3)"},
+    {"command": "npm run lint --workspace frontend (from app)", "exit_code": 0, "result": "PASS", "evidence": "0 errors, 1 pre-existing warning in auth-context.tsx (react-refresh/only-export-components, unrelated to this story) — matches code-review.json"},
+    {"command": "npm run typecheck --workspace frontend (from app)", "exit_code": 0, "result": "PASS", "evidence": "tsc --noEmit clean, no output"},
+    {"command": "npm run format:check --workspace frontend (from app)", "exit_code": 1, "result": "FAIL", "evidence": "prettier --check . reports 'Code style issues found in 6 files': ingredient-form.test.tsx, ingredient-form.tsx, supplier-list-section.tsx, ingredients-suppliers-setup.tsx, styles.css, App.test.tsx. Diffed each against `npx prettier <file>` (stdout only, no --write, no source modified): all 6 are pure printWidth (100-char) line-wrap/whitespace reflows — no logic, string, attribute, or DOM change in any diff. This command is listed in implementation-plan.md §10 as a verification command this plan relies on, but its result was never run or reported in implementation.md, unit-test-report.md, or code-review.json (all three omit it from their command lists) — a real evidence gap, independently reproduced here as a failure. Not part of the CI gate (.github/workflows/ci.yml's frontend job runs lint/typecheck/test/build only, not format:check; app/README.md documents format:check as a local-only command)."},
+    {"command": "npm run build --workspace frontend (from app)", "exit_code": 0, "result": "PASS", "evidence": "tsc -b && vite build succeeded; dist/ produced (60 modules transformed, built in 1.46s) — matches implementation.md's reported build success"},
+    {"command": "certutil -hashfile artifacts/development/acri-61/implementation-plan.md SHA256", "exit_code": 0, "result": "PASS", "evidence": "cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276 — matches plan_checksum in every dependent artifact"},
+    {"command": "Directory diff: actual app/backend + app/frontend/src file listing vs. implementation-plan.md §13 CREATE+MODIFY list + implementation.md's disclosed deviation list", "exit_code": 0, "result": "PASS", "evidence": "All 20 CREATE + 6 MODIFY files present at the expected paths. Disclosed cross-cutting deviation also confirmed present: new app/frontend/src/components/common/app-shell.tsx; className-only changes in app/frontend/src/styles.css, App.tsx, and the 3 ACRI-66-owned files (routes/login.tsx, components/auth/login-form.tsx, components/common/stub-screen.tsx). No unexplained extra files found under the story's touched directories."},
+    {"command": "Secrets/debug-artifact scan (grep for console.log/debugger/TODO/FIXME/pdb.set_trace/AKIA/private-key/sk- patterns across app/backend/**/*.py and app/frontend/src/**)", "exit_code": 0, "result": "PASS", "evidence": "No matches in story-owned files (one unrelated false-positive hit inside a vendored .venv/site-packages/pip dependency, not story code, excluded). app/backend/.gitignore excludes *.db, .venv/, __pycache__/, caches; app/backend/app.db (local dev SQLite with fixture data) is correctly untracked/ignored, not a committed secret."},
+    {"command": "Read of ACRI-66's dev-status.json post_qa_handoff_annotations and qa-handoff.md Post-handoff annotation section", "exit_code": 0, "result": "PASS", "evidence": "Both artifacts contain the dated 2026-09-18 annotation disclosing the cross-cutting styling touch to the 4 named ACRI-66 files, cross-referencing ACRI-61's code-review.json round-1 CR-001; content verified consistent with the actual current file contents and does not reopen ACRI-66's READY_FOR_QA/PASS status."},
+    {"command": "Direct read of app/backend/db/models.py, services/ingredient_service.py, schemas/ingredients.py and app/frontend/src/components/ingredients-suppliers/gap-flag.tsx", "exit_code": 0, "result": "PASS", "evidence": "resolve_safety_margin() uses `is not None` checks throughout (never truthy/falsy), never coerces to 0; CheckConstraints on both tables mirror the Pydantic validators as DB-level backstops; GapFlag renders `role=\"alert\"` visible text, not color-only — matches every AC1-AC5 evidence claim in code-review.json/unit-test-report.md"}
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "ACRI-61-AC1",
+      "status": "PASS",
+      "evidence": [
+        "app/backend/db/models.py::Ingredient (unit, unit_cost, perishable, shelf_life_days) with CHECK constraints",
+        "app/backend/schemas/ingredients.py::IngredientBase.perishable_requires_shelf_life cross-field validator (422 on violation)",
+        "app/frontend/src/components/ingredients-suppliers/ingredient-master-section.tsx renders all four fields per row",
+        "app/backend/tests/test_ingredients_api.py::test_create_and_list_ingredient_round_trips_ac1_fields, test_perishable_ingredient_with_null_shelf_life_returns_422 (re-run fresh, pass)"
+      ],
+      "qa_remaining": ["TS-E2E-01: browser confirmation of 30-40 ingredients viewable end-to-end via the real UI with real seeded data"]
+    },
+    {
+      "id": "ACRI-61-AC2",
+      "status": "PASS",
+      "evidence": [
+        "app/backend/db/models.py::Supplier + Ingredient.supplier_id FK",
+        "app/backend/routes/ingredients.py GET /suppliers, GET /ingredients (nested SupplierSummary via IngredientOut.supplier)",
+        "app/frontend/src/components/ingredients-suppliers/{supplier-list-section.tsx, ingredient-master-section.tsx} render lead time / mapped supplier name",
+        "app/backend/tests/test_suppliers_api.py::test_create_and_list_suppliers_round_trips_name_and_lead_time; test_ingredients_api.py::test_ingredient_created_with_valid_supplier_id_shows_nested_supplier_summary_ac2 (re-run fresh, pass)"
+      ],
+      "qa_remaining": ["TS-E2E-01: browser confirmation of 3-5 suppliers viewable with lead time, mapped correctly per ingredient row"]
+    },
+    {
+      "id": "ACRI-61-AC3",
+      "status": "PASS",
+      "evidence": [
+        "IngredientOut.has_supplier computed from supplier_id nullability (services/ingredient_service.py::_to_ingredient_out)",
+        "app/frontend/src/components/ingredients-suppliers/gap-flag.tsx renders visible role=\"alert\" text badge (\"No supplier mapped\"), not color-only",
+        "app/backend/tests/test_ingredients_api.py::test_ingredient_created_with_no_supplier_is_flagged_ac3; ingredients-suppliers-setup.test.tsx; gap-flag.test.tsx (re-run fresh, pass)"
+      ],
+      "qa_remaining": ["TS-E2E-02: manual/accessibility check that the flag is genuinely screen-reader readable, not color-only, in the real rendered UI"]
+    },
+    {
+      "id": "ACRI-61-AC4",
+      "status": "PASS",
+      "evidence": [
+        "app/backend/services/ingredient_service.py::resolve_safety_margin — override then supplier default then None, `is not None` checks throughout (zero never conflated with missing)",
+        "app/backend/tests/test_safety_margin_gap_logic.py (6 tests incl. explicit-zero override and explicit-zero supplier-default cases, re-run fresh, pass)",
+        "test_ingredients_api.py::test_ingredient_override_takes_precedence_over_supplier_default_ac4, test_ingredient_falls_back_to_supplier_default_when_no_override_ac4"
+      ],
+      "qa_remaining": ["TS-E2E-01: browser confirmation the captured/viewable safety-margin value is correct end-to-end through the add/edit forms"]
+    },
+    {
+      "id": "ACRI-61-AC5",
+      "status": "PASS",
+      "evidence": [
+        "safety_margin_gap = effective_value is None (never 0), services/ingredient_service.py",
+        "gap-flag.tsx \"Safety margin not set\"; ingredient-master-section.tsx never renders 0 in place of the flag",
+        "test_ingredients_api.py::test_ingredient_with_no_override_and_no_mapped_supplier_value_is_gap_never_zero_ac5, test_ingredient_with_no_supplier_and_no_override_is_gap_never_zero_ac5 (re-run fresh, pass)"
+      ],
+      "qa_remaining": ["TS-E2E-01/02: browser + accessibility confirmation the gap flag is visible and never shows a literal 0 in the live UI"]
+    }
+  ],
+  "changed_files": {
+    "create_20_confirmed": [
+      "app/backend/schemas/ingredients.py",
+      "app/backend/services/ingredient_service.py",
+      "app/backend/routes/ingredients.py",
+      "app/backend/scripts/seed_demo_ingredients.py",
+      "app/backend/tests/test_suppliers_api.py",
+      "app/backend/tests/test_ingredients_api.py",
+      "app/backend/tests/test_safety_margin_gap_logic.py",
+      "app/backend/tests/test_seed_demo_ingredients.py",
+      "app/frontend/src/lib/ingredients-api.ts",
+      "app/frontend/src/lib/ingredients-api.test.ts",
+      "app/frontend/src/routes/ingredients-suppliers-setup.tsx",
+      "app/frontend/src/routes/ingredients-suppliers-setup.test.tsx",
+      "app/frontend/src/components/ingredients-suppliers/supplier-list-section.tsx",
+      "app/frontend/src/components/ingredients-suppliers/supplier-form.tsx",
+      "app/frontend/src/components/ingredients-suppliers/supplier-form.test.tsx",
+      "app/frontend/src/components/ingredients-suppliers/ingredient-master-section.tsx",
+      "app/frontend/src/components/ingredients-suppliers/ingredient-form.tsx",
+      "app/frontend/src/components/ingredients-suppliers/ingredient-form.test.tsx",
+      "app/frontend/src/components/ingredients-suppliers/gap-flag.tsx",
+      "app/frontend/src/components/ingredients-suppliers/gap-flag.test.tsx"
+    ],
+    "modify_6_confirmed": [
+      "app/backend/db/models.py",
+      "app/backend/main.py",
+      "app/frontend/src/lib/api-client.ts",
+      "app/frontend/src/App.tsx",
+      "app/frontend/src/test/App.test.tsx",
+      "app/README.md"
+    ],
+    "disclosed_cross_cutting_deviation_confirmed": {
+      "create": ["app/frontend/src/components/common/app-shell.tsx"],
+      "modify_classname_only": [
+        "app/frontend/src/styles.css",
+        "app/frontend/src/App.tsx (already counted in modify_6, additionally wrapped in AppShell)",
+        "app/frontend/src/routes/login.tsx (ACRI-66-owned)",
+        "app/frontend/src/components/auth/login-form.tsx (ACRI-66-owned)",
+        "app/frontend/src/components/common/stub-screen.tsx (ACRI-66-owned)"
+      ],
+      "acri_66_annotation_status": "Confirmed present and accurate in artifacts/development/acri-66/dev-status.json (post_qa_handoff_annotations) and qa-handoff.md (Post-handoff annotation, 2026-09-18 section), consistent with the round-2 code-review resolution of CR-001."
+    },
+    "unexplained_extra_files": "None found in the story's touched directories beyond the plan's list and the disclosed deviation."
+  },
+  "qa_scenarios": [
+    "TS-E2E-01 (Jira AC1-AC5, browser): log in, navigate to /data-setup/ingredients-suppliers, add 3+ ingredients and 2+ suppliers via the UI (one ingredient left unmapped, one left with no safety margin at any level), confirm both gap flags appear without a page reload, confirm an unauthenticated visit redirects to /login.",
+    "TS-E2E-02 (Design Doc UI-007, manual/accessibility): confirm the perishable flag is a real keyboard-operable checkbox (not a styled div), the supplier picker is a real <select>, and both gap flags are readable by a screen reader (not color-only).",
+    "TS-E2E-03 (manual, out-of-scope confirmation): confirm no bulk-upload/file-import control exists anywhere on the screen, and no delete action exists for either suppliers or ingredients (documented out-of-scope, not a defect).",
+    "Visual/cosmetic spot-check of the newly disclosed cross-cutting styling pass (app-shell.tsx top bar/nav, restyled login and stub screens) since it was authored without an approved pixel-level design source (implementation.md's own flagged gap) and is outside this story's own AC scope."
+  ],
+  "known_issues": [
+    {
+      "id": "KI-001",
+      "severity": "MINOR",
+      "description": "npm run format:check --workspace frontend (Prettier) fails on 6 files touched by this story: ingredient-form.test.tsx, ingredient-form.tsx, supplier-list-section.tsx, ingredients-suppliers-setup.tsx, styles.css, App.test.tsx. All diffs are pure 100-char printWidth line-wrap/whitespace reflows (verified via `npx prettier <file>` stdout diff, no functional/content change). This command is declared in implementation-plan.md §10 as relied upon for verification, but its result was never run/recorded in implementation.md, unit-test-report.md, or code-review.json — an evidence-chain gap now surfaced by this independent re-run.",
+      "classification": "regression (newly introduced by this story's own new/modified files; not pre-existing, not environment/tooling-only) but non-functional/cosmetic only — not gated by CI (.github/workflows/ci.yml does not run frontend format:check) and not a functional or security defect.",
+      "recommended_action": "Run `npx prettier --write` on the 6 named files in a follow-up commit before or shortly after QA handoff; no re-test needed since no logic changes. Not source-modified here per this agent's read-only verification mandate.",
+      "resolved": "2026-09-18: `npx prettier --write` run on all 6 named files (whitespace/line-wrap only, no content change). `npm run format:check` now passes cleanly. Full suite re-run after the fix: backend pytest 91 passed, frontend vitest 44 passed, typecheck/lint/build all clean. No regression."
+    },
+    {
+      "id": "KI-002",
+      "severity": "SUGGESTION (carried, non-blocking)",
+      "description": "code-review.json CR-002: AppShell renders its own top-bar 'Log out' button while each stub screen's own body also separately renders a 'Log out' button (both call the same logout()). No functional/security defect.",
+      "classification": "pre-existing (carried from code review, unchanged)",
+      "recommended_action": "Consider consolidating to a single logout control in a future cleanup story; non-blocking for this gate."
+    },
+    {
+      "id": "KI-003",
+      "severity": "SUGGESTION (carried, non-blocking)",
+      "description": "code-review.json CR-003: duplicate-name uniqueness relies on catching IntegrityError as a backstop (functionally correct, fully tested), differing slightly in stated mechanism from the plan's docstring wording ('lookup-then-create/update').",
+      "classification": "pre-existing (carried from code review, unchanged)",
+      "recommended_action": "Optional: sync plan/docstring wording in a future pass; no gate impact."
+    },
+    {
+      "id": "KI-004",
+      "severity": "INFORMATIONAL",
+      "description": "config/project.yaml's development.require_approved_hld/require_approved_lld/require_architecture_validation flags still read true, unreconciled with DEC-005's repository-wide bypass. This is the same already-disclosed gap carried from ACRI-66's evidence chain and DEC-005 itself; not newly discovered, not treated as a failure here per this task's explicit governing-context instruction.",
+      "classification": "environment/tooling (config-file drift from an explicit, human-approved decision, not a code defect)",
+      "recommended_action": "Reconcile config/project.yaml with DEC-005 in a follow-up housekeeping change; out of scope for this story and this agent."
+    }
+  ],
+  "environment_notes": [
+    "Backend commands run against the pre-existing app/backend/.venv (Python venv) using the exact commands documented in implementation-plan.md §10 and app/README.md; no new dependency installation was required or performed.",
+    "Frontend commands run via `npm run <script> --workspace frontend` from app/ (root workspace), matching the plan and .github/workflows/ci.yml exactly, except format:check which is documented as local-only (not part of the CI job).",
+    "No migration tool exists in this repo; the two new tables (suppliers, ingredients) are greenfield and created via the existing Base.metadata.create_all() startup mechanism, documented in implementation-plan.md §7 (apply) and §11 (rollback: delete the local app.db file, or drop the two tables; re-run python -m scripts.seed_demo_ingredients if the fixture is wanted again). No pre-existing data to migrate, no backward-compatibility concern.",
+    "app/backend/app.db (local dev SQLite, contains fixture-seeded demo data) and app/backend/.venv/ are both correctly excluded via app/backend/.gitignore (*.db, .venv/); no secrets or credentials found in any story-owned source file during a targeted scan.",
+    "HLD/LLD/architecture-validation gate bypass for this story is governed by workflow/decisions.md DEC-004 (PRD superseded by Jira stories) and DEC-005 (explicit human-authorized bypass, repository-wide, for every ACRI story), both directly read and confirmed present in this session; their absence is not treated as a failure per this task's explicit instruction."
+  ]
+}

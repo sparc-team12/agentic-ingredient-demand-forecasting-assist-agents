@@ -117,6 +117,7 @@ Specialist agents are direct children of the orchestrator — there is no recurs
 | HLD Architect | `.claude/agents/solution-hld-agent.md` | `artifacts/architecture/high-level-design.md` (`HLD-XXX`) |
 | LLD Architect | `.claude/agents/solution-lld-agent.md` | `artifacts/architecture/low-level-design.md` (`LLD-XXX`) |
 | Architecture Validator | `.claude/agents/solution-architecture-validator-agent.md` | `artifacts/architecture/architecture-validation.json` and development-readiness gate |
+| Project Initializer | `.claude/agents/dev-scaffold-agent.md` | Tech-stack-driven manifests, source/test layout, configuration, CI, build verification, and `project-initialization.json` |
 | UI/UX Designer | `.claude/agents/uiux-designer-agent.md` | `artifacts/design/ui-ux-specification.md` (`UI-XXX`) |
 | Estimation & Cost | `.claude/agents/estimation-cost-agent.md` | `artifacts/estimation/estimation-cost-analysis.md` (`EST-XXX`) |
 | Risk & Compliance | `.claude/agents/risk-compliance-agent.md` | `artifacts/risk/risk-register.md` (`RISK-XXX`) |
@@ -152,7 +153,7 @@ No gate above is itself publish approval — every individual Confluence page or
     product-discovery/SKILL.md   master orchestration procedure (dispatch order, gates)
     validation-review/SKILL.md   consistency/completeness/feasibility/quality-security checklist
     confluence-publish/SKILL.md  MCP verification, search-before-create, CREATE vs UPDATE, publish
-  commands/          /product-plan, /orchestrate, /develop, /research, /features, /stories,
+  commands/          /product-plan, /orchestrate, /init-project, /develop, /research, /features, /stories,
                       /architecture, /uiux, /estimate, /risk, /test-strategy, /review,
                       /status, /prd, /publish, /retry, /skip
   CLAUDE.md          repo-level operating rules for Claude Code
@@ -209,6 +210,7 @@ Either way, before the first real publish, set `confluence.space` and `confluenc
 /skip <workflow-id> <agent>                 skip an agent (requires confirmation)
 /status [workflow-id]                       show workflow state
 /develop <id> <requirement-path> ...        implement one approved work item through READY_FOR_QA
+/init-project <id> --target <path>          initialize/verify boilerplate from approved stack, HLD, and LLD
 ```
 
 Individual-document Confluence publishes (PRD, feature/architecture/UI-UX, estimation/risk, test strategy) and the Jira story publish happen inline in the full pipeline right after their gate — there's no separate slash command for each; see `.claude/agents/orchestrator-agent.md`.
@@ -278,13 +280,14 @@ See `SETUP_DECISIONS.md` for the full list, notably:
 
 ## 15. Development to QA workflow
 
-First run `/generate-architecture [workflow-id] --repo <target-repository>` to produce and approve the HLD and LLD. Then run `/develop <work-item-id> <approved-requirement-path> [--repo <path>] [--test-strategy <path>]`. Development refuses to start unless solution architecture, HLD, and LLD are approved and `architecture-validation.json` says `PASS` and `development_ready: true`.
+First run `/generate-architecture [workflow-id] --repo <target-repository>` to produce and approve the HLD and LLD. For a new project, `/init-project <project-id> --target <path>` can initialize the boilerplate explicitly; `/develop` also invokes the same initializer automatically when it detects an empty target. Development refuses to start unless solution architecture, HLD, and LLD are approved and `architecture-validation.json` says `PASS` and `development_ready: true`.
 
 The development orchestrator runs this deterministic sequence:
 
 ```text
-Requirements validation
-  (approved HLD + LLD required)
+Project initialization/verification
+  (approved stack + HLD + LLD required; safely skipped for an existing compatible repository)
+  -> requirements validation
   -> repository-aware implementation plan
   -> independent tech-lead review
   -> implementation + focused tests

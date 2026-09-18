@@ -1,0 +1,32 @@
+# Root .gitignore covering both the npm (frontend) and pip (backend) ecosystems.
+# Ecosystem-specific ignores also live in app/frontend/.gitignore and
+# app/backend/.gitignore; this file covers cross-cutting / editor artifacts.
+
+# Node / npm (frontend)
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.local
+
+# Python (backend)
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.db
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Environment files
+.env
+.env.local
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

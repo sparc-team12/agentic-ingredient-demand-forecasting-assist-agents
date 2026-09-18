@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-66",
+  "status": "PASS",
+  "plan_checksum": "sha256:e921a607cdfbe1da39afdc31461913c682fb5d4336a4357a9c387ca3b1959fe8",
+  "preconditions_checked": [
+    "artifacts/development/acri-66/code-review.json - status PASS, round 1, plan_checksum matches",
+    "artifacts/development/acri-66/implementation-plan.md - re-hashed independently, sha256 matches code-review.json/implementation.md/unit-test-report.md's cited checksum exactly",
+    "artifacts/development/acri-66/implementation.md - status COMPLETED",
+    "artifacts/development/acri-66/unit-test-report.md - status PASS",
+    "workflow/decisions.md#DEC-004/DEC-005 - governing overrides (Jira-stories-as-source, HLD/LLD gate bypass) acknowledged; verification does not fail for absence of HLD/LLD/architecture-validation artifacts"
+  ],
+  "commands": [
+    {
+      "command": "cd app/backend && .venv/Scripts/python.exe -m pytest -q",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "52 passed, 2 pre-existing Starlette/anyio DeprecationWarnings (unrelated to this story), ~34s. Matches code-review.json's and unit-test-report.md's reported count exactly."
+    },
+    {
+      "command": "cd app/backend && .venv/Scripts/python.exe -m ruff check .",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "All checks passed!"
+    },
+    {
+      "command": "cd app/backend && .venv/Scripts/python.exe -m black --check .",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "All done! 25 files would be left unchanged."
+    },
+    {
+      "command": "cd app/backend && .venv/Scripts/python.exe -m mypy .",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "Success: no issues found in 25 source files. pyproject.toml [tool.mypy] files list independently confirmed to include schemas and scripts."
+    },
+    {
+      "command": "cd app && npm run test --workspace frontend",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "4 test files, 11 tests, all passed, ~3.3s. Matches claimed count exactly."
+    },
+    {
+      "command": "cd app && npm run lint --workspace frontend",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "0 errors, 1 pre-existing warning (react-refresh/only-export-components in lib/auth-context.tsx) - matches implementation.md's disclosed, accepted warning."
+    },
+    {
+      "command": "cd app && npm run typecheck --workspace frontend",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "tsc --noEmit, clean, no output/errors."
+    },
+    {
+      "command": "cd app && npm run format:check --workspace frontend",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "All matched files use Prettier code style!"
+    },
+    {
+      "command": "cd app && npm run build --workspace frontend",
+      "exit_code": 0,
+      "result": "PASS",
+      "evidence": "tsc -b && vite build succeeded; dist/ produced (186.03 kB JS / 60.91 kB gzip), matches implementation.md's reported build output size."
+    },
+    {
+      "command": "cd app && npm audit --workspace frontend",
+      "exit_code": null,
+      "result": "PASS",
+      "evidence": "5 vulnerabilities (3 moderate, 1 high, 1 critical) confirmed, all in the vite/vitest/esbuild dev-tooling dependency chain (pre-existing, dev-only, not shipped to production bundle); react-router-dom (this story's only new dependency) is clean. Matches code-review.json's and implementation.md's disclosed claim exactly."
+    }
+  ],
+  "changed_files_confirmation": {
+    "result": "MATCH",
+    "notes": "Independently listed all files under app/backend (excluding .venv/__pycache__/.mypy_cache/.ruff_cache/.pytest_cache/*.db) and app/frontend/src, and compared against implementation-plan.md section 13's sorted CREATE+MODIFY file list. Exact match: 31 CREATE + 8 MODIFY, 0 DELETE. Two additional adjacent files confirmed present and justified: app/backend/requirements.txt (bcrypt==4.0.1 explicit pin, grep-confirmed) and app/backend/requirements-lock.txt (regenerated pip-freeze output, bcrypt==4.0.1 present), both documented in implementation.md section 7 as a version-compatibility fix to the already-approved passlib[bcrypt] dependency, not a new/undisclosed dependency. One additional test file beyond the original plan scope was also confirmed: app/backend/tests/test_auth_me.py, added during the unit-test stage per unit-test-report.md to close a documented GET /auth/me coverage gap - additive, test-only, consistent with that report's own disclosure. No undisclosed or unexplained files found in scope.",
+    "changed_files": [
+      "app/README.md",
+      "app/backend/.env.example",
+      "app/backend/db/models.py",
+      "app/backend/db/seed.py",
+      "app/backend/main.py",
+      "app/backend/middleware/auth.py",
+      "app/backend/pyproject.toml",
+      "app/backend/routes/auth.py",
+      "app/backend/routes/screens.py",
+      "app/backend/schemas/__init__.py",
+      "app/backend/schemas/auth.py",
+      "app/backend/scripts/__init__.py",
+      "app/backend/scripts/seed_demo_accounts.py",
+      "app/backend/services/auth_service.py",
+      "app/backend/tests/conftest.py",
+      "app/backend/tests/test_auth_login.py",
+      "app/backend/tests/test_auth_logout.py",
+      "app/backend/tests/test_auth_me.py",
+      "app/backend/tests/test_auth_session_required.py",
+      "app/backend/tests/test_failed_login_alerting.py",
+      "app/backend/tests/test_seed_demo_accounts.py",
+      "app/frontend/package.json",
+      "app/frontend/src/App.tsx",
+      "app/frontend/src/components/auth/login-form.test.tsx",
+      "app/frontend/src/components/auth/login-form.tsx",
+      "app/frontend/src/components/auth/require-auth.test.tsx",
+      "app/frontend/src/components/auth/require-auth.tsx",
+      "app/frontend/src/components/common/stub-screen.tsx",
+      "app/frontend/src/hooks/use-auth.ts",
+      "app/frontend/src/lib/api-client.test.ts",
+      "app/frontend/src/lib/api-client.ts",
+      "app/frontend/src/lib/auth-context.tsx",
+      "app/frontend/src/lib/screens.ts",
+      "app/frontend/src/main.tsx",
+      "app/frontend/src/routes/chat-agent.tsx",
+      "app/frontend/src/routes/ingredient-detail.tsx",
+      "app/frontend/src/routes/login.tsx",
+      "app/frontend/src/routes/purchase-order-draft.tsx",
+      "app/frontend/src/routes/risk-dashboard.tsx",
+      "app/frontend/src/test/App.test.tsx",
+      "app/backend/requirements.txt (adjacent, justified: bcrypt==4.0.1 pin)",
+      "app/backend/requirements-lock.txt (adjacent, justified: regenerated lock)"
+    ]
+  },
+  "secrets_and_debug_artifacts_check": {
+    "result": "PASS",
+    "notes": "app/backend/.env.example independently read in full: only obviously-fake placeholder values present (SEED_KITCHEN_MANAGER_EMAIL=kitchen.manager@example.com, SEED_KITCHEN_MANAGER_PASSWORD=changeme-not-a-real-secret, SEED_FB_MANAGER_EMAIL=fb.manager@example.com, SEED_FB_MANAGER_PASSWORD=changeme-also-not-a-real-secret), each with an inline comment warning against committing real-shaped credentials. app/backend/.gitignore confirmed to exclude .env, *.db, __pycache__, .venv, .mypy_cache, .ruff_cache, .pytest_cache, htmlcov, .coverage. grep across app/frontend/src and app/backend (excluding .venv) for console.log/debugger/pdb.set_trace/breakpoint() found matches only inside third-party .venv site-packages, none in project source. No stray app.db, cookies.txt, or real .env file found anywhere in the repository (manual smoke-test artifacts from implementation.md section 8 were confirmed cleaned up)."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "ACRI-66-AC1",
+      "status": "PASS",
+      "evidence": [
+        "middleware/auth.py::get_current_user (read in full) raises 401 {\"detail\": \"Not authenticated\"} when session_token cookie is absent or does not resolve to a session row; independently re-ran test_auth_session_required.py::test_each_screen_returns_401_with_no_session_cookie (4/4 parametrized) and test_each_screen_returns_401_with_a_garbage_cookie (4/4) - all passing.",
+        "components/auth/require-auth.tsx (read in full) renders <Navigate to=\"/login\" replace /> when useAuth().status === 'unauthenticated'; require-auth.test.tsx and App.test.tsx independently re-run, passing."
+      ],
+      "qa_remaining": [
+        "TS-13 (real-browser direct-URL visit with no prior session redirects to /login, and session persists across client-side navigation) - not exercisable by pytest/Vitest alone, requires an actual browser session."
+      ]
+    },
+    {
+      "id": "ACRI-66-AC2",
+      "status": "PASS",
+      "evidence": [
+        "POST /auth/login sets an httpOnly session_token cookie on success (services/auth_service.py::create_session, routes/auth.py); subsequent /screens/* requests with that cookie return 200 for both personas - test_auth_login.py and test_auth_session_required.py (200 cases) independently re-run, passing.",
+        "login-form.tsx calls useAuth().login and navigates to /risk-dashboard on success - login-form.test.tsx independently re-run, passing."
+      ],
+      "qa_remaining": [
+        "TS-13 (UI login flow granting navigation to all 4 stub screens in a real browser, no further redirects)."
+      ]
+    },
+    {
+      "id": "ACRI-66-AC3",
+      "status": "PASS",
+      "evidence": [
+        "services/auth_service.py::verify_credentials returns None uniformly for unknown-email and wrong-password; routes/auth.py returns identical generic 401 {\"detail\": \"Invalid email or password\"}, no cookie/session row created - test_auth_login.py's wrong-password and unknown-email cases independently re-run, passing.",
+        "LoginForm renders an inline role=alert error and does not navigate on 401 - login-form.test.tsx independently re-run, passing."
+      ],
+      "qa_remaining": [
+        "TS-15 (manual/security: confirm HttpOnly + SameSite=Lax flags via browser dev tools and that the cookie is not readable via document.cookie) - requires a real browser, not exercisable via pytest/Vitest."
+      ]
+    },
+    {
+      "id": "ACRI-66-AC4",
+      "status": "PASS",
+      "evidence": [
+        "Per-row bcrypt verification in verify_credentials confirmed by direct code read; cross-credential rejection independently re-verified via test_auth_login.py's kitchen-manager/fb-manager cross-credential cases.",
+        "db/seed.py::seed_demo_accounts creates exactly 2 accounts with independently generated hashes and distinct emails - test_seed_demo_accounts.py (6 cases incl. the unit-test stage's added partial-state idempotency case) independently re-run, passing."
+      ],
+      "qa_remaining": []
+    },
+    {
+      "id": "ACRI-66-AC5",
+      "status": "PASS",
+      "evidence": [
+        "routes/screens.py independently read in full: no persona-conditional branching anywhere; identical ScreenPlaceholderResponse shape returned for both personas via a shared _placeholder_response helper - test_both_personas_get_a_byte_identical_response_shape (4 screens, parametrized) independently re-run, passing."
+      ],
+      "qa_remaining": [
+        "TS-14 (manual/UX-parity: confirm fb-manager sees no visually restricted/aggregate-only variant of any screen in an actual browser render; the current stub screens carry no visual distinction, but this is a Development-owned code guarantee, not a visual/UX confirmation) - QA-owned per the plan."
+      ]
+    }
+  ],
+  "changed_files": [
+    "app/README.md",
+    "app/backend/.env.example",
+    "app/backend/db/models.py",
+    "app/backend/db/seed.py",
+    "app/backend/main.py",
+    "app/backend/middleware/auth.py",
+    "app/backend/pyproject.toml",
+    "app/backend/requirements.txt",
+    "app/backend/requirements-lock.txt",
+    "app/backend/routes/auth.py",
+    "app/backend/routes/screens.py",
+    "app/backend/schemas/__init__.py",
+    "app/backend/schemas/auth.py",
+    "app/backend/scripts/__init__.py",
+    "app/backend/scripts/seed_demo_accounts.py",
+    "app/backend/services/auth_service.py",
+    "app/backend/tests/conftest.py",
+    "app/backend/tests/test_auth_login.py",
+    "app/backend/tests/test_auth_logout.py",
+    "app/backend/tests/test_auth_me.py",
+    "app/backend/tests/test_auth_session_required.py",
+    "app/backend/tests/test_failed_login_alerting.py",
+    "app/backend/tests/test_seed_demo_accounts.py",
+    "app/frontend/package.json",
+    "app/frontend/src/App.tsx",
+    "app/frontend/src/components/auth/login-form.test.tsx",
+    "app/frontend/src/components/auth/login-form.tsx",
+    "app/frontend/src/components/auth/require-auth.test.tsx",
+    "app/frontend/src/components/auth/require-auth.tsx",
+    "app/frontend/src/components/common/stub-screen.tsx",
+    "app/frontend/src/hooks/use-auth.ts",
+    "app/frontend/src/lib/api-client.test.ts",
+    "app/frontend/src/lib/api-client.ts",
+    "app/frontend/src/lib/auth-context.tsx",
+    "app/frontend/src/lib/screens.ts",
+    "app/frontend/src/main.tsx",
+    "app/frontend/src/routes/chat-agent.tsx",
+    "app/frontend/src/routes/ingredient-detail.tsx",
+    "app/frontend/src/routes/login.tsx",
+    "app/frontend/src/routes/purchase-order-draft.tsx",
+    "app/frontend/src/routes/risk-dashboard.tsx",
+    "app/frontend/src/test/App.test.tsx"
+  ],
+  "qa_scenarios": [
+    "TS-13 (e2e/browser, AC1+AC2): visiting a protected URL directly with no prior session redirects to /login in a real browser; logging in through the UI grants navigation to all 4 stub screens without further redirects; session persists across client-side navigation between them.",
+    "TS-14 (manual, AC5 UX parity): confirm fb-manager sees no visually restricted/aggregate-only variant of any of the 4 (stub) screens; re-verify once each screen's real business logic lands in its own future story.",
+    "TS-15 (manual/security, non-functional): inspect the session cookie in real browser dev tools - confirm HttpOnly and SameSite=Lax flags are set and the cookie is not readable via document.cookie.",
+    "TS-16 (manual, out-of-scope confirmation): confirm no MFA step, no self-service 'forgot password' link, and no idle-timeout/forced-logout behavior appear anywhere in the login flow (documented out-of-scope, not a defect).",
+    "Cross-browser cookie behavior (SameSite=Lax / HttpOnly enforcement) across at least one Chromium-based and one non-Chromium browser, since pytest/TestClient does not exercise real browser cookie-jar semantics.",
+    "Visual/UX review of the login screen's copy and layout - explicitly flagged in implementation-plan.md Q2/unit-test-report as having no design source; a human should sanity-check it before/at QA."
+  ],
+  "known_issues": [
+    "CR-001 (carried from code-review.json, MINOR, not blocking): services/auth_service.py::verify_credentials returns immediately without a bcrypt call on unknown-email, but performs a full bcrypt verify on wrong-password - a timing side-channel that could theoretically distinguish 'unknown email' from 'wrong password' despite an identical 401 message. Low practical risk for this POC's fixed 2-account scope; recommended hardening (dummy-hash verify on the unknown-email path) tracked as a future story, not a gate blocker for this one.",
+    "CR-002/CR-003 (carried, SUGGESTION, not blocking): bcrypt==4.0.1 pin is a few minor versions behind current bcrypt releases (tracked for a future passlib/bcrypt upgrade path); 5 pre-existing npm audit findings (3 moderate/1 high/1 critical) in the vite/vitest/esbuild dev-tooling chain, dev-only, pre-dating this story, independently reconfirmed present and unchanged in scope.",
+    "artifacts/development/acri-66/dev-status.json is stale - still shows status RUNNING / current_stage project_initialization and a superseded Node.js/Express backend_framework_assumption, despite code-review.json (round 1, PASS), implementation.md (COMPLETED), and unit-test-report.md (PASS) all existing and matching the same plan checksum. This staleness was already flagged consistently at the tech-lead-review and code-review stages as a known, non-blocking orchestrator-bookkeeping gap (not a functional defect) - re-confirmed here, not newly discovered. Recommend the dev-orchestrator refresh dev-status.json's stage/status fields before or as part of QA handoff so downstream consumers of that file are not misled about actual progress.",
+    "config/project.yaml's development.require_approved_hld/require_approved_lld/require_architecture_validation flags remain unreconciled with DEC-005's bypass (out of this story's/this verification's file scope; carried forward from tech-lead-review.json and code-review.json unchanged)."
+  ],
+  "migrations_and_config_notes": {
+    "applicable": true,
+    "notes": "No Alembic/migration tool exists; three new tables (users, user_sessions, login_attempts) are created via Base.metadata.create_all(engine) in main.py's FastAPI lifespan startup hook, and independently via the standalone python -m scripts.seed_demo_accounts CLI (both confirmed present in source). Apply: automatic on backend process startup (schema create-if-missing + idempotent seed_demo_accounts). Rollback (documented in implementation-plan.md section 11 and implementation.md section 6, both independently read): purely additive change, no destructive migration - revert this story's file changes to roll back code; for local data, delete the gitignored local app.db file and re-run the seed CLI to reset. No irreversible side effects (no email sent, no third-party account, no production secret provisioned). Four new backend env vars and three tuning vars are documented in .env.example with an inline non-production-value warning; SESSION_COOKIE_SECURE correctly defaults false pending the still-open ARCH-018 AWS/TLS hosting decision, a carried (not new) risk."
+  },
+  "environment_notes": [
+    "Verified on Windows 11, backend .venv Python 3.14.5, frontend Node v24.20.0 / npm 11.19.0 - same toolchain implicitly used by the prior implementation/code-review stages (all command outputs and counts matched exactly, indicating no environment drift).",
+    "This repository has no prior git commit for app/ or artifacts/development/acri-66/ (both fully untracked per git status); 'diff against base' was therefore performed as a full recursive file-listing comparison against the plan's section 13 CREATE/MODIFY list and section 4 REUSE list, consistent with the same method code-review.json used, not a git diff.",
+    "No coverage command is defined in the plan's verification commands or CI config for either workspace; no coverage percentage is reported here, consistent with unit-test-report.md's own disclosure - this is a pre-existing project characteristic, not a gap introduced or hidden by this verification."
+  ]
+}

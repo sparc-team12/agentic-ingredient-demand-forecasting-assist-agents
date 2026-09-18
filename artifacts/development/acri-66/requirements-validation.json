@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-66",
+  "status": "PASS",
+  "confidence": 0.87,
+  "sources": [
+    "Jira ACRI-66 (Story-Id US-030, epic ACRI-65 'Authentication') - requirement source, per DEC-004 override (PRD not used as requirements source for this build)",
+    "workflow/decisions.md#DEC-004 - PRD superseded by Jira user stories; login model resolved to per-user, superseding ARCH-016's single-shared-login",
+    "workflow/decisions.md#DEC-005 - explicit bypass of HLD/LLD/architecture-validation development gate; IAM protocol resolved to passlib[bcrypt] hashing + opaque server-side session token in httpOnly/sameSite=lax cookie + SQLite sessions table",
+    "Confluence 'Technology Stack' page (id 5885657157, Status: Approved) - substitute HLD-equivalent source per DEC-005, stack facts (React frontend, SQLite, AWS, self-hosted Gemma; IAM protocol section resolved by DEC-005)",
+    "Confluence 'Design Document - Agentic Ingredient Demand Forecasting Assistant' (id 5885722653, Status: Approved) - substitute LLD/UI-flow-equivalent source per DEC-005; defines the 4 gated screens (risk-dashboard, ingredient-detail, chat-agent, purchase-order-draft); predates auth, no login screen spec",
+    "artifacts/architecture/solution-architecture.md (ARCH-016, Approved) - describes single-shared-login model, explicitly superseded for this build by DEC-004/ACRI-66 per recorded override, not a live contradiction",
+    "artifacts/development/_scaffold/project-initialization.json (status PASS) - confirms scaffolded stack: React+TS+Vite frontend and FastAPI+SQLAlchemy+SQLite backend at app/frontend and app/backend",
+    "artifacts/development/acri-66/dev-status.json - stale/incomplete prior-session artifact, read for context only, not treated as current status (see warnings)"
+  ],
+  "blocking_issues": [],
+  "warnings": [
+    "HLD/LLD/architecture-validation gate is explicitly bypassed per DEC-005. The substitute sources (Technology Stack + Design Document Confluence pages) establish system-level facts and the IAM protocol (bcrypt hashing, opaque session token, httpOnly/sameSite=lax cookie, sessions table) but do not provide LLD-level detail (exact API contracts/endpoints, sessions/users table schema fields, error-code taxonomy, module/file map, test seams) for the login feature. This detail must be produced during planning/tech-lead review, not assumed to pre-exist.",
+    "The approved Confluence Design Document predates REQ-043/044 and ACRI-66 and contains no login-screen wireframe or spec. The acceptance criteria in ACRI-66 are specific enough to implement against, but the visual/interaction design of the login screen itself (layout, error-message copy/placement, field validation UX) is not pre-specified and will need to be authored fresh, consistent with the existing 4 screens' design conventions.",
+    "Failed-login lockout / rate-limiting / brute-force-protection threshold remains an open [TBD] in security-architecture.md and was not resolved by DEC-005 (DEC-005 resolves hashing and session mechanism only). Neither ACRI-66's acceptance criteria nor its Out-of-Scope list mention a lockout/rate-limit policy. This is an implementation-level security gap the planning stage should explicitly resolve (even if the resolution is 'no lockout in v1') rather than leave silently unaddressed.",
+    "No acceptance criterion or source document specifies how the two persona accounts (kitchen-manager, fb-manager) are initially provisioned (self-registration, admin/seed script, manual DB insert). AC2-AC4 presuppose these credentials already exist; this is required for the feature to be testable end-to-end and should be resolved at planning time (e.g., a seed script), not invented ad hoc during implementation.",
+    "artifacts/development/acri-66/dev-status.json is stale: it is still at stage 'project_initialization'/RUNNING and records a superseded backend_framework_assumption of Node.js/Express, which DEC-005 has since overridden to FastAPI. The dev-orchestrator should refresh this file rather than rely on its prior content."
+  ],
+  "questions": [
+    "Should failed/invalid login attempts be rate-limited or trigger a lockout in v1, or is that explicitly deferred alongside MFA? (Currently unaddressed by any AC or Out-of-Scope item.)",
+    "How are the initial kitchen-manager and fb-manager credential sets created for v1 - a seed script run at deployment, a manager/support-assisted admin action, or something else?"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "ACRI-66-AC1",
+      "source": "Jira ACRI-66 AC1",
+      "criterion": "Given a new session with no prior authentication, when a user attempts to reach the risk dashboard, ingredient detail, Chat Agent, or purchase-order-draft screen, then access is denied and the user is redirected to a login screen.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-66-AC2",
+      "source": "Jira ACRI-66 AC2",
+      "criterion": "Given a kitchen-manager or fb-manager with a valid email and password, when they submit them at the login screen, then they gain access to the risk dashboard, ingredient detail, Chat Agent, and purchase-order-draft screens for that session.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-66-AC3",
+      "source": "Jira ACRI-66 AC3",
+      "criterion": "Given an email/password pair that does not match a known credential, when the user submits it, then authentication fails, an error is shown, and no screen becomes reachable.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-66-AC4",
+      "source": "Jira ACRI-66 AC4",
+      "criterion": "Given kitchen-manager and fb-manager each hold their own distinct credential set, when one persona's credentials are used, then they authenticate only that persona - no single credential set authenticates both.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-66-AC5",
+      "source": "Jira ACRI-66 AC5",
+      "criterion": "Given both personas are authenticated (in the same or different sessions), when either is logged in, then each is granted identical access to the full risk dashboard, ingredient detail, Chat Agent, and purchase-order drafting - no restricted or aggregate-only view is shown to fb-manager.",
+      "testable": true
+    }
+  ]
+}

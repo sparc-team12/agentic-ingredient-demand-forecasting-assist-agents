@@ -1,0 +1,8 @@
+# Scaffold-only development/test/lint/format/typecheck dependencies.
+# Versions bumped alongside requirements.txt for Python 3.14 wheel availability.
+-r requirements.txt
+pytest==8.4.2
+httpx==0.28.1
+ruff==0.14.14
+black==25.1.0
+mypy==1.18.2

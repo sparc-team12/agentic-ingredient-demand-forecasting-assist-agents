@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-66",
+  "status": "READY_FOR_QA",
+  "current_stage": "qa_handoff",
+  "repository": "agentic-ingredient-demand-forecasting-assist-agents",
+  "sources": {
+    "requirement_source": "Jira ACRI-66 (project ACRI, Story-Id US-030, epic ACRI-65 'Authentication') - authoritative per DEC-004 (Jira user stories supersede the PRD as requirements source for this build, given PRD version drift to v1.6 vs. the architecture suite's v1.1 baseline).",
+    "hld_lld_gate": "SKIPPED_BY_EXPLICIT_HUMAN_DIRECTION, recorded centrally in workflow/decisions.md DEC-005 - covers this story and every other ACRI story going forward, superseding this field's earlier per-story-only note. Grounded instead in the approved Confluence 'Technology Stack' (page 5885657157) and 'Design Document' (page 5885722653) pages, both Status: Approved, fetched live via the Atlassian MCP connector this session, plus artifacts/architecture/solution-architecture.md (Status: Approved).",
+    "ui_ux_source": "Confluence 'Design Document - Agentic Ingredient Demand Forecasting Assistant' (page id 5885722653, Status: Approved) - fetched live via Atlassian MCP this session (not indirectly, correcting this field's earlier note). Confirms 4 core screens (risk-dashboard, ingredient-detail, chat-agent, purchase-order-draft) plus 5 data-setup screens; predates auth (REQ-043/044) and has no login-screen spec - login screen authored fresh in implementation-plan.md, flagged as QA-remaining for UX/copy review (no design source to trace to).",
+    "architecture_source": "artifacts/architecture/solution-architecture.md (Status: Approved). ARCH-016 (single shared login) is superseded for this story per DEC-004: ACRI-66 AC4/AC5 require two distinct per-persona credential sets (kitchen-manager, fb-manager), documented as a deliberate resolution, not a silent contradiction.",
+    "backend_framework_assumption": "SUPERSEDED - originally Node.js+Express+TypeScript (never scaffolded); corrected by explicit human direction ('do the backend using fastapi') to Python + FastAPI + SQLAlchemy/SQLite, recorded in workflow/decisions.md DEC-005 and actually scaffolded/implemented on that basis.",
+    "session_mechanism_assumption": "Opaque server-side session token (crypto-random, 256-bit) via httpOnly, sameSite=lax cookie, backed by a SQLite `sessions` table (passlib[bcrypt] for password hashing). Matches DEC-005. SESSION_COOKIE_SECURE is env-configurable, defaults false pending the still-open AWS/TLS topology decision.",
+    "failed_login_alerting_assumption": "5 failed attempts for the same email within a 15-minute rolling window logs a structured WARN-level alert log entry; no lockout enforced in v1. Implemented and independently verified (boundary + window-expiry tests) at the unit-test and code-review stages."
+  },
+  "plan_round": 1,
+  "review_round": 1,
+  "stages": {
+    "project_initialization": "PASS",
+    "requirements": "PASS",
+    "planning": "PASS",
+    "tech_lead": "PASS",
+    "implementation": "PASS",
+    "unit_tests": "PASS",
+    "code_review": "PASS",
+    "verification": "PASS",
+    "qa_handoff": "PASS"
+  },
+  "artifacts": {
+    "project_initialization": "artifacts/development/_scaffold/project-initialization.json",
+    "requirements_validation": "artifacts/development/acri-66/requirements-validation.json",
+    "implementation_plan": "artifacts/development/acri-66/implementation-plan.md",
+    "tech_lead_review": "artifacts/development/acri-66/tech-lead-review.json",
+    "implementation": "artifacts/development/acri-66/implementation.md",
+    "unit_test_report": "artifacts/development/acri-66/unit-test-report.md",
+    "code_review": "artifacts/development/acri-66/code-review.json",
+    "development_verification": "artifacts/development/acri-66/development-verification.json",
+    "qa_handoff": "artifacts/development/acri-66/qa-handoff.md"
+  },
+  "plan_checksum": "sha256:e921a607cdfbe1da39afdc31461913c682fb5d4336a4357a9c387ca3b1959fe8",
+  "blockers": [],
+  "known_issues": [
+    "CR-001 (MINOR): timing side-channel between unknown-email vs wrong-password paths in verify_credentials; low risk at fixed 2-account POC scale.",
+    "SESSION_COOKIE_SECURE defaults false pending open AWS/TLS hosting decision.",
+    "No migration tool yet; schema via Base.metadata.create_all() at startup.",
+    "5 pre-existing frontend dev-tooling npm-audit vulnerabilities (vite/vitest/esbuild chain), unrelated to this story."
+  ],
+  "post_qa_handoff_annotations": [
+    {
+      "date": "2026-09-18",
+      "note": "A cross-cutting visual-design pass (done while implementing ACRI-61, per direct human instruction to 'continue building UI') added className-only styling to 4 files this story owns: routes/login.tsx, components/auth/login-form.tsx, components/common/stub-screen.tsx, App.tsx (now wrapped in a new shared components/common/app-shell.tsx top-bar/nav component). No DOM structure, text content, role/label attributes, or business logic changed in any of these files. All of this story's own tests (login-form.test.tsx, require-auth.test.tsx, App.test.tsx) were re-run after the change and still pass (verified independently at ACRI-61's code-review stage, artifacts/development/acri-61/code-review.json). This does not reopen this work item's PASS/READY_FOR_QA status; it is disclosed here per artifacts/development/acri-61/implementation.md's own deviation note, and per that item's code-review round-1 finding (CR-001) requiring this annotation to actually be made.",
+      "related": "ACRI-61 implementation.md, ACRI-61 code-review.json (round 1, CR-001)"
+    }
+  ],
+  "updated_at": "2026-09-18T00:00:00Z"
+}
