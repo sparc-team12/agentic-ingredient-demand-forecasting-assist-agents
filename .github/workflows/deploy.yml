@@ -24,6 +24,7 @@ on:
     paths:
       - "app/**"
       - ".github/workflows/deploy.yml"
+  workflow_dispatch: {} # lets you manually trigger a redeploy without needing a dummy app/ change - e.g. after an infra-only fix that recreated the instance
 
 jobs:
   deploy:
