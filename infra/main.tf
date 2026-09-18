@@ -299,7 +299,7 @@ resource "aws_route_table_association" "public" {
 # =============================================================================
 
 resource "aws_security_group" "app" {
-  name        = "${var.app_name}-sg"
+  name_prefix = "${var.app_name}-sg-" # not a fixed `name` - AWS appends a random unique suffix, which is what actually lets create_before_destroy (below) work: a fixed name would collide with the still-existing old SG when Terraform tries to create the replacement first
   description = "Application instance - inbound HTTP (frontend) and backend API port; outbound HTTPS only (Gemini API)"
   vpc_id      = aws_vpc.this.id
 
