@@ -88,6 +88,12 @@ variable "app_name" {
   default     = "ingredient-forecast-app-prod"
 }
 
+variable "app_key_name" {
+  description = "Name of an EC2 key pair, created manually in the AWS Console (Console generates the private key client-side and never stores it, so this can't be created by Terraform if you need to download the .pem) — required for deploy.yml's SSH-based deploy to have anything to authenticate with."
+  type        = string
+  default     = "ingredient-forecast-app-prod-key"
+}
+
 variable "app_ami_id" {
   description = "AMI ID for the instance. Ubuntu Server 26.04 LTS, x86_64, us-east-1 (matches t3.micro's architecture — the Arm variant of this AMI would not boot on a t3 instance family)."
   type        = string
@@ -294,13 +300,21 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "app" {
   name        = "${var.app_name}-sg"
-  description = "Application instance - inbound HTTP from the internet; outbound HTTPS only (Gemini API)"
+  description = "Application instance - inbound HTTP (frontend) and backend API port; outbound HTTPS only (Gemini API)"
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description = "HTTP"
+    description = "HTTP (frontend static files, served on port 80)"
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "FastAPI backend - called directly by the browser (app/frontend/.env.example: VITE_API_URL), not proxied through port 80 - app/backend/main.py has no static-file serving, frontend and backend are decoupled processes"
+    from_port   = 8000
+    to_port     = 8000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -437,8 +451,9 @@ resource "aws_instance" "app" {
   # form did not reliably take effect in CI.
   ami                         = var.app_ami_id
   instance_type               = var.app_instance_type
-  ebs_optimized               = true # CKV_AWS_135 — always true for t3/current-gen (Nitro) instances regardless; set explicitly rather than relying on the implicit default
-  monitoring                  = true # CKV_AWS_126 — 1-minute metrics instead of the 5-minute default; small added cost, real value for spotting t3.micro CPU-credit exhaustion early
+  key_name                    = var.app_key_name # created manually in AWS Console (see variable description) — deploy.yml's EC2_SSH_KEY secret must be this key pair's downloaded private key
+  ebs_optimized               = true             # CKV_AWS_135 — always true for t3/current-gen (Nitro) instances regardless; set explicitly rather than relying on the implicit default
+  monitoring                  = true             # CKV_AWS_126 — 1-minute metrics instead of the 5-minute default; small added cost, real value for spotting t3.micro CPU-credit exhaustion early
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.app.id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
