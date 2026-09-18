@@ -342,7 +342,7 @@ resource "aws_security_group" "app" {
   }
 
   egress {
-    description = "HTTP outbound, apt package mirrors use plain HTTP on this AMI (security.ubuntu.com, ec2.archive.ubuntu.com), DEC-017 assumed all mirrors were HTTPS-only which was wrong here, deploy.yml apt-get install failed with Network is unreachable until this was added"
+    description = "HTTP outbound for apt package mirrors (plain HTTP on this AMI, not HTTPS) - corrects DEC-017 which wrongly assumed all mirrors were HTTPS-only"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"

@@ -25,11 +25,23 @@ on:
       - "app/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch: {} # lets you manually trigger a redeploy without needing a dummy app/ change - e.g. after an infra-only fix that recreated the instance
+  workflow_run:
+    workflows: ["Terraform"] # must match terraform.yml's `name:` exactly
+    types: [completed]
+    branches: [main]
+    # Every infra-only fix (security group, instance replacement, etc.) needs a
+    # redeploy afterward, but infra changes alone never touch app/** and so never
+    # triggered this workflow on their own - this closes that gap automatically
+    # instead of requiring a manual "Run workflow" click every time.
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: prod # same Environment as terraform.yml's apply job
+    # Only proceed on workflow_run if the triggering Terraform run actually
+    # succeeded - a failed apply shouldn't be followed by a deploy attempt
+    # against infrastructure that may not exist or may be mid-change.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Validate deployment configuration
         env:
