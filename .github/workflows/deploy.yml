@@ -30,6 +30,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod # same Environment as terraform.yml's apply job
     steps:
+      - name: Validate deployment configuration
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          test -n "$EC2_HOST" || {
+            echo "::error::The prod environment secret EC2_HOST is missing or empty"
+            exit 1
+          }
+          test -n "$EC2_SSH_KEY" || {
+            echo "::error::The prod environment secret EC2_SSH_KEY is missing or empty"
+            exit 1
+          }
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
