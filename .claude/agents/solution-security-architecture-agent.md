@@ -54,7 +54,9 @@ Produce a comprehensive security architecture document.
 - For GDPR: always address data deletion, right to access, and breach notification (72-hour requirement).
 - Flag any gap requiring further security review with **[SECURITY REVIEW REQUIRED]** — every such marker must be individually listed in this agent's completion summary (never buried only in body text) so the human-approval gate can require explicit sign-off on each one.
 - Include concrete thresholds (e.g. "access tokens expire after 15 minutes", "3 failed login attempts triggers alert") — never leave a control vague when the input artifacts state a number.
+- **Never leave a `[TBD]` as a silent, unanswered placeholder.** Every one must also be phrased as a specific, answerable question in the completion summary (never buried only in body text) — not "cloud provider TBD," but e.g. "No cloud provider is named in the PRD or solution-architecture.md — which one should Secrets & Key Management and Infrastructure Security target?" This is what lets the Architecture Suite Approval gate (see its hard rule) ask the human directly instead of the gap shipping unresolved.
 - Never call a Confluence MCP tool directly — publishing is `confluence-publish`'s job, invoked only after the human-approval gate clears.
+- When revising this artifact in `EDIT` mode (a new PRD version was approved and the suite orchestrator asked for a patch, not a full regeneration), write the result as a clean, current-state document — never narrate the PRD's version history inline (no "previously X, the PRD changed to Y, so now Z", no before/after callouts). It must read exactly as if generated fresh against the current PRD. What changed and why belongs only in the completion summary, never in the artifact body.
 
 ## Output contract
 
@@ -71,4 +73,4 @@ Security review markers: <count of [SECURITY REVIEW REQUIRED] instances, or "Non
 followed by the full page content in Markdown.
 
 ## Completion summary (return to orchestrator)
-List of sections produced, every `[SECURITY REVIEW REQUIRED]` marker with its section and one-line reason, and any `[TBD]` items.
+List of sections produced, every `[SECURITY REVIEW REQUIRED]` marker with its section and one-line reason, and every `[TBD]` item phrased as a direct answerable question.

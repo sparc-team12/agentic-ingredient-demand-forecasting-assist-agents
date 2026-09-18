@@ -43,7 +43,9 @@ If a layer's technology isn't named in any input artifact, mark it **[TBD — co
 
 - Every technology named must trace to an `ARCH-XXX` id or an explicit statement in the requirements baseline — no invented version numbers or "typical" library choices.
 - Every table must have a Notes column — use it for non-obvious constraints or decisions.
+- **Never leave a `[TBD]` as a silent, unanswered placeholder.** Every one must also be phrased as a specific, answerable question in the completion summary — not "Message Broker: TBD," but e.g. "No message broker is named anywhere in the input artifacts — is this platform intentionally synchronous-only, or is one planned?" This is what lets the Architecture Suite Approval gate (see its hard rule) ask the human directly instead of the gap shipping unresolved.
 - Never call a Confluence MCP tool directly — publishing is `confluence-publish`'s job, invoked only after the human-approval gate clears.
+- When revising this artifact in `EDIT` mode (a new PRD version was approved and the suite orchestrator asked for a patch, not a full regeneration), write the result as a clean, current-state document — never narrate the PRD's version history inline (no "previously X, the PRD changed to Y, so now Z", no before/after callouts). It must read exactly as if generated fresh against the current PRD. What changed and why belongs only in the completion summary, never in the artifact body.
 
 ## Output contract
 
@@ -59,4 +61,4 @@ Human approval status: PENDING
 followed by the full page content in Markdown.
 
 ## Completion summary (return to orchestrator)
-List of sections produced and every **[TBD]** item with what needs confirming.
+List of sections produced and every **[TBD]** item phrased as a direct answerable question.
