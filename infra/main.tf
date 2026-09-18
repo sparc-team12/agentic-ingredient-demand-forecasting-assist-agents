@@ -452,8 +452,8 @@ resource "aws_instance" "app" {
   ami                         = var.app_ami_id
   instance_type               = var.app_instance_type
   key_name                    = var.app_key_name # created manually in AWS Console (see variable description) — deploy.yml's EC2_SSH_KEY secret must be this key pair's downloaded private key
-  ebs_optimized               = true # CKV_AWS_135 — always true for t3/current-gen (Nitro) instances regardless; set explicitly rather than relying on the implicit default
-  monitoring                  = true # CKV_AWS_126 — 1-minute metrics instead of the 5-minute default; small added cost, real value for spotting t3.micro CPU-credit exhaustion early
+  ebs_optimized               = true             # CKV_AWS_135 — always true for t3/current-gen (Nitro) instances regardless; set explicitly rather than relying on the implicit default
+  monitoring                  = true             # CKV_AWS_126 — 1-minute metrics instead of the 5-minute default; small added cost, real value for spotting t3.micro CPU-credit exhaustion early
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.app.id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
