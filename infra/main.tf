@@ -472,6 +472,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [aws_security_group.app.id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
   associate_public_ip_address = false # a dedicated Elastic IP is associated below instead
+  disable_api_termination     = true  # prevents accidental termination (console click or API call) - an instance was terminated by accident, cause unknown; must be explicitly disabled (console or `aws ec2 modify-instance-attribute --no-disable-api-termination`) before this instance can be terminated again, including by `terraform destroy`
   user_data                   = var.app_user_data
 
   metadata_options {
