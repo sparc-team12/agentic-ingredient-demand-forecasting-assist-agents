@@ -1,0 +1,118 @@
+name: Deploy to EC2
+
+# Application-code deploy - separate concern from .github/workflows/terraform.yml
+# (which provisions the instance itself). Assumes the instance already exists
+# (infra/main.tf applied) and is reachable at secrets.EC2_HOST.
+#
+# Stack (per app/README.md): React + TypeScript + Vite (npm workspace, app/frontend)
+# + Python FastAPI (app/backend) + SQLAlchemy over SQLite. Frontend and backend are
+# DECOUPLED processes, not one combined server - app/backend/main.py has no static-
+# file serving, and app/frontend/.env.example's VITE_API_URL points the browser at
+# the backend's own port directly. So this deploy runs two systemd services:
+#   - ingredient-forecast-frontend, serving the built static files on port 80
+#   - ingredient-forecast-backend, running uvicorn on port 8000
+# infra/main.tf's security group opens both ports for this reason.
+#
+# Repo layout note: this checks out into ~/app, and the repo's own top-level app/
+# directory (containing frontend/ and backend/) ends up nested at ~/app/app/... -
+# not a typo, just how "checkout into ~/app" and the repo's existing app/ folder
+# combine.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/deploy.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod # same Environment as terraform.yml's apply job
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }} # Secret: EC2_HOST - the app instance's Elastic IP/public DNS (infra/main.tf `aws_eip.app` / `terraform output public_ip`)
+          username: ubuntu # matches the Ubuntu 26.04 AMI in infra/main.tf
+          key: ${{ secrets.EC2_SSH_KEY }} # Secret: EC2_SSH_KEY - private key for the key pair named in infra/main.tf's app_key_name variable
+          envs: EC2_HOST
+          script: |
+            set -e
+            REPO_DIR=~/app
+            APP_DIR="$REPO_DIR/app"
+
+            if [ -d "$REPO_DIR/.git" ]; then
+              cd "$REPO_DIR"
+              git fetch origin main
+              git reset --hard origin/main
+            else
+              git clone https://github.com/sparc-team12/agentic-ingredient-demand-forecasting-assist-agents.git "$REPO_DIR"
+              cd "$REPO_DIR"
+            fi
+
+            # ---- Backend (FastAPI, app/backend) ----
+            cd "$APP_DIR/backend"
+            python3 -m venv .venv --upgrade-deps 2>/dev/null || python3 -m venv .venv
+            source .venv/bin/activate
+            pip install -r requirements.txt # runtime deps only - NOT requirements-dev.txt (lint/test/mypy tooling, not needed to run the app)
+            deactivate
+
+            if [ ! -f .env ]; then
+              echo "WARNING: app/backend/.env does not exist - copying .env.example as a placeholder."
+              echo "This will NOT have real values (Gemini API key, etc.) - edit it on the instance before the app will actually work."
+              cp .env.example .env
+            fi
+
+            # ---- Frontend (React/Vite, app/frontend, npm workspace at app/) ----
+            cd "$APP_DIR"
+            npm install
+            VITE_API_URL="http://${EC2_HOST}:8000" npm run build --workspace frontend
+            # VITE_API_URL is baked into the built static files at build time (Vite
+            # inlines import.meta.env.* values) - it cannot be changed at runtime
+            # afterward without rebuilding.
+
+            # ---- Backend systemd service ----
+            sudo tee /etc/systemd/system/ingredient-forecast-backend.service > /dev/null <<EOF
+            [Unit]
+            Description=Agentic Ingredient Demand Forecasting Assistant - Backend (FastAPI)
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=ubuntu
+            WorkingDirectory=$APP_DIR/backend
+            ExecStart=$APP_DIR/backend/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+            Restart=on-failure
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            # ---- Frontend systemd service (static file server on port 80) ----
+            sudo tee /etc/systemd/system/ingredient-forecast-frontend.service > /dev/null <<EOF
+            [Unit]
+            Description=Agentic Ingredient Demand Forecasting Assistant - Frontend (static files)
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=ubuntu
+            WorkingDirectory=$APP_DIR/frontend
+            ExecStart=/usr/bin/npx --yes serve -s dist -l 80
+            AmbientCapabilities=CAP_NET_BIND_SERVICE
+            CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+            Restart=on-failure
+            RestartSec=5
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            sudo systemctl daemon-reload
+            sudo systemctl enable ingredient-forecast-backend ingredient-forecast-frontend
+            sudo systemctl restart ingredient-forecast-backend
+            sudo systemctl restart ingredient-forecast-frontend
+            sudo systemctl status ingredient-forecast-backend --no-pager
+            sudo systemctl status ingredient-forecast-frontend --no-pager
