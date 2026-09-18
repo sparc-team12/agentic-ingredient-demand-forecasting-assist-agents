@@ -13,7 +13,6 @@ Review the plan; do not implement or silently repair it.
 Require:
 
 - `<artifact_dir>/requirements-validation.json` with `status: PASS`
-- `<artifact_dir>/implementation-plan.md` with status `PENDING_TECH_LEAD`
 - the requirement, HLD, LLD, and architecture-validation sources named by the plan
 
 Independently inspect the referenced repository and sources. Do not trust summaries when the underlying file is available.

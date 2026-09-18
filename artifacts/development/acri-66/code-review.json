@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-66",
+  "round": 1,
+  "status": "PASS",
+  "plan_checksum": "sha256:e921a607cdfbe1da39afdc31461913c682fb5d4336a4357a9c387ca3b1959fe8",
+  "base_ref": "No prior commit exists for this feature (app/ and artifacts/development/acri-66/ are both untracked/new per `git status`). Review diff established per task instructions by comparing implementation-plan.md §4/§13's CREATE/MODIFY file list against the actual current working-tree contents of app/backend and app/frontend/src, against the scaffold baseline recorded in artifacts/development/_scaffold/project-initialization.json.",
+  "governing_overrides_acknowledged": [
+    "workflow/decisions.md#DEC-004 - PRD superseded by Jira ACRI stories as requirements source; per-user login supersedes ARCH-016",
+    "workflow/decisions.md#DEC-005 - explicit human bypass of HLD/LLD/architecture-validation development gate; review does not fail for absence of those artifacts"
+  ],
+  "reviewed_files": [
+    "app/backend/db/models.py",
+    "app/backend/db/seed.py",
+    "app/backend/schemas/__init__.py",
+    "app/backend/schemas/auth.py",
+    "app/backend/services/auth_service.py",
+    "app/backend/middleware/auth.py",
+    "app/backend/routes/auth.py",
+    "app/backend/routes/screens.py",
+    "app/backend/scripts/__init__.py",
+    "app/backend/scripts/seed_demo_accounts.py",
+    "app/backend/main.py",
+    "app/backend/.env.example",
+    "app/backend/requirements.txt",
+    "app/backend/requirements-dev.txt",
+    "app/backend/requirements-lock.txt",
+    "app/backend/pyproject.toml",
+    "app/backend/tests/conftest.py",
+    "app/backend/tests/test_auth_login.py",
+    "app/backend/tests/test_auth_logout.py",
+    "app/backend/tests/test_auth_me.py",
+    "app/backend/tests/test_auth_session_required.py",
+    "app/backend/tests/test_failed_login_alerting.py",
+    "app/backend/tests/test_seed_demo_accounts.py",
+    "app/frontend/src/lib/api-client.ts",
+    "app/frontend/src/lib/api-client.test.ts",
+    "app/frontend/src/lib/auth-context.tsx",
+    "app/frontend/src/lib/screens.ts",
+    "app/frontend/src/hooks/use-auth.ts",
+    "app/frontend/src/components/auth/login-form.tsx",
+    "app/frontend/src/components/auth/login-form.test.tsx",
+    "app/frontend/src/components/auth/require-auth.tsx",
+    "app/frontend/src/components/auth/require-auth.test.tsx",
+    "app/frontend/src/components/common/stub-screen.tsx",
+    "app/frontend/src/routes/login.tsx",
+    "app/frontend/src/routes/risk-dashboard.tsx",
+    "app/frontend/src/routes/ingredient-detail.tsx",
+    "app/frontend/src/routes/chat-agent.tsx",
+    "app/frontend/src/routes/purchase-order-draft.tsx",
+    "app/frontend/src/App.tsx",
+    "app/frontend/src/main.tsx",
+    "app/frontend/src/test/App.test.tsx",
+    "app/frontend/package.json",
+    "app/README.md"
+  ],
+  "scope_check": {
+    "result": "MATCH",
+    "notes": "Full recursive listing of app/backend and app/frontend/src (excluding node_modules/.venv/dist/caches) matches the plan's §13 CREATE+MODIFY file list exactly (31 CREATE + 8 MODIFY, 0 DELETE). Two adjacent, documented deviations found and verified justified: (1) app/backend/requirements.txt gained an explicit bcrypt==4.0.1 pin, (2) app/backend/requirements-lock.txt was regenerated (mechanical pip freeze output). Both disclosed in implementation.md §7 and independently verified below."
+  },
+  "acceptance_criteria": [
+    {
+      "id": "ACRI-66-AC1",
+      "status": "PASS",
+      "evidence": [
+        "middleware/auth.py::get_current_user raises 401 with no/invalid session cookie; independently re-ran pytest test_auth_session_required.py::test_each_screen_returns_401_with_no_session_cookie (4/4 parametrized, passing)",
+        "app/frontend/src/components/auth/require-auth.tsx renders <Navigate to=\"/login\"> when status==='unauthenticated'; require-auth.test.tsx and App.test.tsx independently re-run, passing"
+      ]
+    },
+    {
+      "id": "ACRI-66-AC2",
+      "status": "PASS",
+      "evidence": [
+        "POST /auth/login verifies credentials, sets httpOnly session cookie, subsequent /screens/* calls with that cookie return 200 for both personas — test_auth_login.py + test_auth_session_required.py (200 cases) re-run, passing",
+        "login-form.tsx calls useAuth().login and navigates to /risk-dashboard on success; login-form.test.tsx re-run, passing"
+      ]
+    },
+    {
+      "id": "ACRI-66-AC3",
+      "status": "PASS",
+      "evidence": [
+        "routes/auth.py::login returns generic 401 {\"detail\": \"Invalid email or password\"} for both unknown-email and wrong-password cases, no cookie set — test_auth_login.py::test_login_with_wrong_password_returns_generic_401 / test_login_with_unknown_email_returns_the_same_generic_401, re-run passing",
+        "LoginForm renders inline role=alert error, does not navigate — login-form.test.tsx re-run, passing"
+      ]
+    },
+    {
+      "id": "ACRI-66-AC4",
+      "status": "PASS",
+      "evidence": [
+        "Per-row bcrypt verification in verify_credentials; test_kitchen_managers_password_does_not_authenticate_as_fb_manager and reverse, re-run passing",
+        "seed_demo_accounts creates exactly 2 accounts with independently generated hashes — test_seed_demo_accounts.py (6 tests incl. partial-state idempotency gap-fix), re-run passing"
+      ]
+    },
+    {
+      "id": "ACRI-66-AC5",
+      "status": "PASS",
+      "evidence": [
+        "routes/screens.py has no persona-conditional branching; ScreenPlaceholderResponse shape identical for both personas — test_both_personas_get_a_byte_identical_response_shape (4 screens, parametrized), re-run passing"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "CR-001",
+      "severity": "MINOR",
+      "file": "app/backend/services/auth_service.py:39-52",
+      "description": "verify_credentials returns immediately (no bcrypt call) when the email is unknown, but performs a full bcrypt.verify when the email exists and only the password is wrong. This creates a measurable timing side-channel that could be used to distinguish 'unknown email' from 'wrong password' even though both paths return an identical 401 body/message (AC3 is met on message content, not on timing). Practical exploitability is low for this specific POC (only 2 demo accounts exist and their emails are already published in the committed .env.example), but the pattern would be a real user-enumeration vector if the account set grows beyond the 2 seeded demo personas.",
+      "required_action": "Optional hardening for a future story: perform a dummy hash.verify() against a fixed/precomputed hash on the unknown-email path so both branches take comparable time. Not required to block this PASS given the POC's fixed 2-account scope and the already-accepted MFA/lockout gaps (DEC-003), but should be tracked if the user set ever grows."
+    },
+    {
+      "id": "CR-002",
+      "severity": "SUGGESTION",
+      "file": "app/backend/requirements.txt:16-24",
+      "description": "The bcrypt==4.0.1 pin (added as a documented deviation to fix a real passlib==1.7.4/bcrypt>=4.1 incompatibility that was verified to 500 every login without the pin) is well-justified, disclosed, and does not introduce a materially different security posture from the already-approved passlib[bcrypt] dependency. bcrypt 4.0.1 is now a few minor versions behind current bcrypt releases.",
+      "required_action": "None required now. Recommend tracking an upgrade path (e.g. moving off passlib to bcrypt's native API, or waiting for a passlib release compatible with newer bcrypt) as a follow-up, not a blocker for this story."
+    },
+    {
+      "id": "CR-003",
+      "severity": "SUGGESTION",
+      "file": "app/package-lock.json (frontend dev dependencies: vite/vitest/esbuild chain)",
+      "description": "`npm audit --workspace frontend` reports 5 pre-existing vulnerabilities (3 moderate, 1 high, 1 critical) in the vite/vitest/esbuild dev-tooling dependency chain. Independently re-ran and confirmed the count matches implementation.md's claim; these are dev-only build/test tooling (not shipped to production bundles) and pre-date this story's only new dependency (react-router-dom, which is clean).",
+      "required_action": "None required to gate this story. Recommend a dedicated dependency-hygiene pass (`npm audit fix --force` with regression testing) tracked separately, as already flagged in implementation.md."
+    }
+  ],
+  "carried_risks_reconfirmed": [
+    "SESSION_COOKIE_SECURE defaults false pending open AWS/TLS hosting topology (ARCH-018) — correctly env-configurable, not hardcoded.",
+    "No Alembic/migration tool yet; Base.metadata.create_all() used at startup, consistent with prior scaffold warning.",
+    "Failed-login handling is WARN-log-only, no lockout — matches DEC-005/task-authorized resolution, verified behaviorally via test_failed_login_alerting.py (including window-expiry and post-threshold boundary cases).",
+    "config/project.yaml's require_approved_hld/lld/architecture_validation flags remain unreconciled with DEC-005 (out of this story's file scope)."
+  ],
+  "commands": [
+    {"cmd": "sha256sum artifacts/development/acri-66/implementation-plan.md", "result": "e921a607cdfbe1da39afdc31461913c682fb5d4336a4357a9c387ca3b1959fe8 — matches plan_checksum recorded in tech-lead-review.json and implementation.md"},
+    {"cmd": "find app -type f (excluding node_modules/.venv/dist/caches)", "result": "Matches implementation-plan.md §13 file list exactly; no undisclosed files in scope"},
+    {"cmd": "cd app/backend && .venv/Scripts/python.exe -m pytest -q", "result": "52 passed, 2 pre-existing deprecation warnings, exit 0 (~34s) — matches unit-test-report.md's claimed count"},
+    {"cmd": "cd app/backend && .venv/Scripts/python.exe -m ruff check .", "result": "All checks passed"},
+    {"cmd": "cd app/backend && .venv/Scripts/python.exe -m black --check .", "result": "All done, 25 files unchanged"},
+    {"cmd": "cd app/backend && .venv/Scripts/python.exe -m mypy .", "result": "Success: no issues found in 25 source files"},
+    {"cmd": "cd app && npm run test --workspace frontend", "result": "4 test files, 11 tests, all passed, exit 0 (~2.6s) — matches claimed count"},
+    {"cmd": "cd app && npm run lint --workspace frontend", "result": "0 errors, 1 pre-existing warning (react-refresh/only-export-components in auth-context.tsx) — matches implementation.md"},
+    {"cmd": "cd app && npm run typecheck --workspace frontend", "result": "Clean, no errors"},
+    {"cmd": "cd app && npm audit --workspace frontend", "result": "5 vulnerabilities (3 moderate, 1 high, 1 critical) in vite/vitest/esbuild dev-tooling chain — matches implementation.md's disclosed claim, confirmed pre-existing/dev-only"},
+    {"cmd": "grep -i bcrypt app/backend/requirements-lock.txt", "result": "bcrypt==4.0.1 — confirms lock file matches the documented pin"}
+  ]
+}

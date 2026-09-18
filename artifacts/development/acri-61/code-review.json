@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-61",
+  "round": 2,
+  "status": "PASS",
+  "plan_checksum": "sha256:cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276",
+  "base_ref": "Unchanged from round 1: no prior commit touches app/ (git log -- app/ is empty; entire app/ tree and artifacts/development/ remain untracked in `git status`, re-confirmed this round). Diff is established directly against the current working-tree files under app/backend, app/frontend, and the artifacts/development/{acri-61,acri-66} evidence trees, read against implementation-plan.md's file tables and implementation.md's disclosure, per that same reasoning re-verified this round.",
+  "preconditions_verified": {
+    "requirements-validation.json": "PASS (confidence 0.85) — unchanged since round 1, re-read this round",
+    "implementation-plan.md": "present; sha256 recomputed fresh this round = cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276, matches plan_checksum in tech-lead-review.json/implementation.md/unit-test-report.md and matches round 1's recorded checksum — file unchanged since round 1",
+    "tech-lead-review.json": "PASS — unchanged since round 1",
+    "implementation.md": "COMPLETED — text updated since round 1 (deviation section now reads, past tense: \"ACRI-66's own dev-status.json (post_qa_handoff_annotations) and qa-handoff.md (a dated 'Post-handoff annotation' section) have been annotated...\"); verified this claim directly against the two ACRI-66 files (see round_2_verification below) — accurate, no longer a forward-looking/unfulfilled claim",
+    "unit-test-report.md": "PASS — unchanged since round 1"
+  },
+  "round_2_scope": "Re-review triggered solely by round 1's CR-001 (MAJOR) requiring ACRI-66's dev-status.json/qa-handoff.md to actually be annotated about the cross-cutting styling pass. Verified the fix and re-confirmed every other round-1 conclusion holds; re-ran all backend and frontend quality-gate commands fresh (not assumed) per contract.",
+  "round_2_verification": {
+    "cr_001_fix_check": "Read artifacts/development/acri-66/dev-status.json directly: contains a new `post_qa_handoff_annotations` array (not present/empty in round 1) with one entry dated 2026-09-18, listing the 4 touched files (routes/login.tsx, components/auth/login-form.tsx, components/common/stub-screen.tsx, App.tsx — now wrapped by a new components/common/app-shell.tsx), stating no DOM structure/text/role/label/business-logic change, and citing that this story's own tests were re-run and pass, cross-referencing artifacts/development/acri-61/code-review.json round 1's CR-001. Read artifacts/development/acri-66/qa-handoff.md directly: contains a new '## Post-handoff annotation (2026-09-18)' section at the end (before 'Development status: READY_FOR_QA') making the identical substantive claim in QA-facing language. Both are consistent with each other and with implementation.md's now-past-tense claim.",
+    "accuracy_check_against_actual_files": "Read the 4 named files directly (app/frontend/src/routes/login.tsx, components/auth/login-form.tsx, components/common/stub-screen.tsx, App.tsx) plus the new app/frontend/src/components/common/app-shell.tsx. Confirmed: login.tsx and login-form.tsx retain the exact DOM/attributes ACRI-66's own tests assert against (label htmlFor=email/password, input ids, role=\"alert\" error paragraph, button text \"Log in\"/\"Log in...\", form aria-label) with only className additions (centered-page, card card--narrow, field, alert, btn btn--primary btn--block) layered on. stub-screen.tsx retains its role=\"alert\" error paragraph and \"Log out\" button text/behavior unchanged, with only className additions (page, page__header, card, hint-text, btn). App.tsx's routing tree (paths, RequireAuth wrapping, redirect logic) is byte-identical in structure to what ACRI-66 shipped, with the only change being the new outer <AppShell> wrapper (a new, separately-disclosed component, not a modification to App's own logic). This matches the annotation's claims exactly — no misrepresentation found.",
+    "does_not_reopen_gate_check": "dev-status.json's overall status/current_stage/stages block (all PASS, READY_FOR_QA) are unchanged from before the annotation was added — only the new post_qa_handoff_annotations array and updated_at were added. The annotation correctly frames itself as a disclosure, not a reopening of any gate, consistent with the repo's rule that READY_FOR_QA is terminal for development.",
+    "nothing_else_changed_check": "Re-diffed file listing/timestamps across artifacts/development/acri-61 and artifacts/development/acri-66: only implementation.md and code-review.json changed in acri-61 (the latter is this review's own output), and only dev-status.json and qa-handoff.md changed in acri-66 — exactly the 3 files the fix was scoped to. requirements-validation.json, implementation-plan.md, tech-lead-review.json, unit-test-report.md in both work items are untouched since round 1 (re-read, statuses/checksums unchanged)."
+  },
+  "reviewed_files": [
+    "app/backend/db/models.py",
+    "app/backend/main.py",
+    "app/backend/schemas/ingredients.py",
+    "app/backend/services/ingredient_service.py",
+    "app/backend/routes/ingredients.py",
+    "app/backend/scripts/seed_demo_ingredients.py",
+    "app/backend/tests/test_suppliers_api.py",
+    "app/backend/tests/test_ingredients_api.py",
+    "app/backend/tests/test_safety_margin_gap_logic.py",
+    "app/backend/tests/test_seed_demo_ingredients.py",
+    "app/backend/middleware/auth.py (reuse, re-verified unmodified)",
+    "app/frontend/src/lib/api-client.ts",
+    "app/frontend/src/lib/ingredients-api.ts",
+    "app/frontend/src/routes/ingredients-suppliers-setup.tsx",
+    "app/frontend/src/components/ingredients-suppliers/supplier-list-section.tsx",
+    "app/frontend/src/components/ingredients-suppliers/supplier-form.tsx",
+    "app/frontend/src/components/ingredients-suppliers/ingredient-master-section.tsx",
+    "app/frontend/src/components/ingredients-suppliers/ingredient-form.tsx",
+    "app/frontend/src/components/ingredients-suppliers/gap-flag.tsx",
+    "app/frontend/src/App.tsx (re-read fresh: unchanged since round 1)",
+    "app/frontend/src/test/App.test.tsx",
+    "app/frontend/src/components/common/app-shell.tsx (re-read fresh: unchanged since round 1)",
+    "app/frontend/src/routes/login.tsx (re-read fresh: unchanged since round 1, ACRI-66-owned)",
+    "app/frontend/src/components/auth/login-form.tsx (re-read fresh: unchanged since round 1, ACRI-66-owned)",
+    "app/frontend/src/components/common/stub-screen.tsx (re-read fresh: unchanged since round 1, ACRI-66-owned)",
+    "artifacts/development/acri-61/implementation.md (changed this round: deviation-note tense corrected to reflect completed annotation)",
+    "artifacts/development/acri-61/implementation-plan.md (re-hashed: unchanged)",
+    "artifacts/development/acri-61/tech-lead-review.json, requirements-validation.json, unit-test-report.md (re-read: unchanged, still PASS/PASS/PASS)",
+    "artifacts/development/acri-66/dev-status.json (changed this round: new post_qa_handoff_annotations entry added, verified accurate)",
+    "artifacts/development/acri-66/qa-handoff.md (changed this round: new Post-handoff annotation section added, verified accurate, consistent with dev-status.json)"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "ACRI-61-AC1",
+      "status": "PASS",
+      "evidence": [
+        "db/models.py::Ingredient (unit, unit_cost, perishable, shelf_life_days) — re-read, unchanged",
+        "schemas/ingredients.py::IngredientBase cross-field validator (perishable requires shelf_life_days)",
+        "ingredient-master-section.tsx renders all four fields per row",
+        "test_ingredients_api.py::test_create_and_list_ingredient_round_trips_ac1_fields, test_perishable_ingredient_with_null_shelf_life_returns_422 (re-run fresh this round, pass)"
+      ]
+    },
+    {
+      "id": "ACRI-61-AC2",
+      "status": "PASS",
+      "evidence": [
+        "db/models.py::Supplier + Ingredient.supplier_id FK",
+        "routes/ingredients.py GET /suppliers, GET /ingredients (nested SupplierSummary)",
+        "supplier-list-section.tsx, ingredient-master-section.tsx render lead time / mapped supplier name",
+        "test_suppliers_api.py::test_create_and_list_suppliers_round_trips_name_and_lead_time, test_ingredients_api.py::test_ingredient_created_with_valid_supplier_id_shows_nested_supplier_summary_ac2 (re-run fresh, pass)"
+      ]
+    },
+    {
+      "id": "ACRI-61-AC3",
+      "status": "PASS",
+      "evidence": [
+        "IngredientOut.has_supplier computed from supplier_id nullability",
+        "gap-flag.tsx renders a visible role=\"alert\" text badge, not color-only",
+        "test_ingredients_api.py::test_ingredient_created_with_no_supplier_is_flagged_ac3, ingredients-suppliers-setup.test.tsx, gap-flag.test.tsx (re-run fresh, pass)"
+      ]
+    },
+    {
+      "id": "ACRI-61-AC4",
+      "status": "PASS",
+      "evidence": [
+        "services/ingredient_service.py::resolve_safety_margin — override then supplier default then None, `is not None` checks throughout",
+        "test_safety_margin_gap_logic.py (6 tests, re-run fresh, pass)",
+        "test_ingredients_api.py::test_ingredient_override_takes_precedence_over_supplier_default_ac4, test_ingredient_falls_back_to_supplier_default_when_no_override_ac4"
+      ]
+    },
+    {
+      "id": "ACRI-61-AC5",
+      "status": "PASS",
+      "evidence": [
+        "safety_margin_gap = effective_value is None (never 0)",
+        "gap-flag.tsx 'Safety margin not set'; ingredient-master-section.tsx never renders 0 in place of the flag",
+        "test_ingredients_api.py::test_ingredient_with_no_override_and_no_mapped_supplier_value_is_gap_never_zero_ac5, test_ingredient_with_no_supplier_and_no_override_is_gap_never_zero_ac5 (re-run fresh, pass)"
+      ]
+    }
+  ],
+  "deviation_review": {
+    "description": "Cross-cutting visual-design pass disclosed in implementation.md, done per direct human instruction outside ACRI-61's own plan scope: new app-shell.tsx, rewritten styles.css, and className-only additions to several files including four ACRI-66-owned files (routes/login.tsx, components/auth/login-form.tsx, components/common/stub-screen.tsx, App.tsx).",
+    "round_1_finding": "MAJOR (CR-001) — implementation.md claimed ACRI-66's dev-status.json/qa-handoff.md were 'being annotated' but no such annotation existed.",
+    "round_2_resolution": "RESOLVED. Both artifacts/development/acri-66/dev-status.json and qa-handoff.md now contain the promised annotation, verified accurate against the actual current file contents (className-only, no DOM/text/role/logic change) and against a fresh full frontend test run (44/44 pass, including all 3 ACRI-66 test files this deviation touches: login-form.test.tsx 3/3, require-auth.test.tsx 3/3, App.test.tsx 3/3). implementation.md's own wording was corrected to past tense to match. No remaining factual gap in the evidence chain."
+  },
+  "findings": [
+    {
+      "id": "CR-001",
+      "severity": "MAJOR",
+      "status": "RESOLVED (round 2)",
+      "file": "artifacts/development/acri-66/dev-status.json, qa-handoff.md",
+      "description": "(Round 1) implementation.md asserted ACRI-66's dev-status.json/qa-handoff.md were annotated to disclose the post-hoc cross-cutting styling touch; no such annotation existed at round 1.",
+      "required_action": "(Round 1) Actually add the annotation or correct implementation.md's claim.",
+      "resolution_evidence": "Round 2: dev-status.json now has a post_qa_handoff_annotations array entry dated 2026-09-18; qa-handoff.md now has a matching '## Post-handoff annotation (2026-09-18)' section. Both independently read and cross-checked against the 4 named files' actual current content — accurate. implementation.md updated to past tense."
+    },
+    {
+      "id": "CR-002",
+      "severity": "MINOR",
+      "status": "OPEN (carried from round 1, non-blocking)",
+      "file": "app/frontend/src/components/common/app-shell.tsx:49-56 vs app/frontend/src/components/common/stub-screen.tsx:63-65",
+      "description": "AppShell renders its own top-bar 'Log out' button (shared useAuth().logout), while each of the 4 stub screens' own body still separately renders its own 'Log out' button. Re-confirmed present, unchanged, this round.",
+      "required_action": "Non-blocking for this gate (no functional/security defect — both call the same logout()). Consider consolidating to a single logout control in a future cleanup story."
+    },
+    {
+      "id": "CR-003",
+      "severity": "SUGGESTION",
+      "status": "OPEN (carried from round 1, non-blocking)",
+      "file": "app/backend/services/ingredient_service.py (all four write functions)",
+      "description": "Duplicate-name uniqueness relies solely on catching IntegrityError (backstop-only), differing slightly in stated mechanism from the plan's docstring wording ('lookup-then-create/update'). Functionally correct and fully tested; re-confirmed unchanged this round.",
+      "required_action": "None required for this gate. Optional: sync plan/docstring wording in a future pass."
+    }
+  ],
+  "commands": [
+    {"cmd": "app/backend/.venv/Scripts/python.exe -m pytest -q", "result": "91 passed, 4 warnings (pre-existing StarletteDeprecationWarning), exit 0 — re-run fresh this round, matches round 1"},
+    {"cmd": "app/backend/.venv/Scripts/python.exe -m ruff check .", "result": "All checks passed! — re-run fresh"},
+    {"cmd": "app/backend/.venv/Scripts/python.exe -m black --check .", "result": "33 files would be left unchanged — re-run fresh"},
+    {"cmd": "app/backend/.venv/Scripts/python.exe -m mypy .", "result": "Success: no issues found in 33 source files — re-run fresh"},
+    {"cmd": "npm run test --workspace frontend -- --run (from app/)", "result": "9 test files, 44 tests passed, exit 0 — re-run fresh, includes login-form.test.tsx (3/3), require-auth.test.tsx (3/3), App.test.tsx (3/3) corroborating the ACRI-66 annotation's test-repass claim"},
+    {"cmd": "npm run lint --workspace frontend (from app/)", "result": "0 errors, 1 pre-existing warning in auth-context.tsx (react-refresh/only-export-components) — re-run fresh, matches round 1"},
+    {"cmd": "npm run typecheck --workspace frontend (from app/)", "result": "clean, no output/errors — re-run fresh"},
+    {"cmd": "sha256/certutil recompute of artifacts/development/acri-61/implementation-plan.md", "result": "cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276 — matches round 1 and all cited plan_checksum fields; file unchanged"},
+    {"cmd": "git status --short", "result": "Same untracked/modified set as round 1 (app/, artifacts/development/, plus pre-existing unrelated doc/config modifications); no unexpected new changes"},
+    {"cmd": "find artifacts/development/acri-61 artifacts/development/acri-66 -type f -newer artifacts/development/acri-61/tech-lead-review.json", "result": "Only implementation.md and code-review.json (acri-61) and dev-status.json and qa-handoff.md (acri-66) are newer than the tech-lead-review baseline — confirms scope of round-2 changes is exactly the CR-001 fix, nothing else"},
+    {"cmd": "Direct read of app/frontend/src/{routes/login.tsx, components/auth/login-form.tsx, components/common/stub-screen.tsx, App.tsx, components/common/app-shell.tsx}", "result": "Confirmed className-only additions on the 4 ACRI-66-owned files (DOM structure/text/role/label attributes unchanged); App.tsx routing logic unchanged, only newly wrapped in AppShell — matches the annotation's claims exactly"}
+  ]
+}

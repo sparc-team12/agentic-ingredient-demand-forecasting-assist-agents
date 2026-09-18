@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-61",
+  "status": "PASS",
+  "plan_checksum": "sha256:cde7761056f7b1c74b0bbfe1b9f7bfb0e6008ac983461b09d823510d0e234276",
+  "findings": [
+    {
+      "severity": "MINOR",
+      "location": "implementation-plan.md#6-contracts-validation-error-handling-and-security (PUT /suppliers/{id}, PUT /ingredients/{id})",
+      "description": "SupplierUpdate/IngredientUpdate are described as 'same shape' as the Create schemas but the plan does not state whether PUT semantics are full-replace (omitted optional fields reset to null/default) or partial/merge. For fields like `safety_margin_days_override` or `supplier_id` this materially changes behavior (e.g. does omitting `supplier_id` on an edit unmap the ingredient, or leave it unchanged?).",
+      "required_action": "Before/during implementation, pin down and document full-replace semantics for PUT (standard REST convention, and consistent with 'edit forms are pre-filled from the already-fetched list' in §6, so the client always sends the complete current object) and add a test asserting that an edit which changes only one field does not silently null out sibling fields the form re-submits unchanged."
+    },
+    {
+      "severity": "SUGGESTION",
+      "location": "implementation-plan.md#4-scope (CREATE #4/#8, seed_demo_ingredients.py / test_seed_demo_ingredients.py)",
+      "description": "The plan doesn't explicitly state that the new seed-script test uses the same isolated-temp-database pattern as `tests/conftest.py` (`test_engine`/`db_session_factory`) rather than touching a developer's real `app.db`. This is almost certainly the intent (consistent with A6's 'opt-in CLI only, not wired into startup') but isn't spelled out.",
+      "required_action": "Optional: during implementation, confirm `test_seed_demo_ingredients.py` runs against an isolated temp SQLite file (mirroring `conftest.py`), not the developer's real `app.db`. Does not block PASS."
+    },
+    {
+      "severity": "SUGGESTION",
+      "location": "implementation-plan.md#6-contracts-validation-error-handling-and-security (ingredients table CHECK constraint)",
+      "description": "`shelf_life_days IS NULL OR shelf_life_days > 0` disallows a `0`-day shelf life for a perishable ingredient (e.g. 'must be used same day'). Plausibly a real edge case for a kitchen dataset, though not required by any AC and not evidenced as an actual current need.",
+      "required_action": "None required for this gate. If a same-day-use ingredient turns up in real data, revisit the constraint to `>= 0` in a follow-up story."
+    }
+  ],
+  "carried_risks": [
+    "SQLite runs without `PRAGMA foreign_keys=ON` in this repo (unchanged, pre-existing posture from ACRI-66); this plan correctly does not rely on DB-level FK enforcement alone for the supplier-picker constraint and instead adds an explicit service-layer existence check (422 on a nonexistent `supplier_id`) with a documented TOCTOU caveat accepted as low-risk at POC/single-writer scale (A11). Revisit if concurrent multi-user editing is ever introduced.",
+      "No Alembic/migration tool exists yet; this story adds two more tables via the same interim `Base.metadata.create_all()` mechanism ACRI-66 already established. Recommend introducing real migrations before further schema-changing stories accumulate.",
+    "config/project.yaml's development.require_approved_hld/require_approved_lld/require_architecture_validation flags still read true, unreconciled with DEC-005's repository-wide bypass. Same already-disclosed gap carried from ACRI-66; this plan correctly does not modify project.yaml out of scope.",
+    "No optimistic-concurrency/versioning on PUT (last-write-wins) - accepted for this POC's single-kitchen-manager-persona scale per the story's own 'no ongoing updates after initial load' out-of-scope note (A11); revisit if multi-manager concurrent editing becomes a real scenario.",
+    "Q1 (no DELETE endpoints; manual add/edit/view only) is accepted as the correct reading of the authorized resolution: no AC in ACRI-61 requires deletion, and the narrower scope is safer and more easily extended later. Q2/Q3 (gap-flag visual/copy treatment, supplier-level safety-margin hint vs. hard flag) are accepted as reasonable author judgment calls for a POC with no pixel-level design source for this exact detail - not blockers, consistent with the same category of gap already left open on ACRI-66's login screen."
+  ],
+  "reviewed_sources": [
+    "artifacts/development/acri-61/requirements-validation.json (status PASS, confidence 0.85, full text)",
+    "artifacts/development/acri-61/implementation-plan.md (full text, independently re-read)",
+    "workflow/decisions.md (DEC-001 through DEC-005, full text, in particular DEC-004/DEC-005 governing override)",
+    "artifacts/architecture/solution-architecture.md (ARCH-011, ARCH-012, ARCH-013, ARCH-014, ARCH-020 sections independently checked against the plan's citations)",
+    "artifacts/development/acri-66/dev-status.json (status READY_FOR_QA; confirms auth infrastructure is real and reusable)",
+    "artifacts/development/acri-66/tech-lead-review.json (prior gate precedent/format reference)",
+    "Real repository state: app/backend/db/models.py (confirms only users/user_sessions/login_attempts exist; no ingredients/suppliers tables, no name collision with the new Supplier/Ingredient models)",
+    "Real repository state: app/backend/middleware/auth.py (get_current_user - confirmed reusable verbatim, cookie-based session dependency, no persona branching)",
+    "Real repository state: app/backend/routes/screens.py, app/backend/main.py (confirms current router registration, lifespan/seed behavior, and that no existing stub route covers this screen)",
+    "Real repository state: app/backend/schemas/auth.py, app/backend/tests/conftest.py (confirms existing Pydantic validator pattern and isolated-test-DB fixture pattern the new work is expected to follow)",
+    "Real repository state: app/backend/pyproject.toml, requirements.txt, requirements-dev.txt (confirms mypy file list already covers new modules and no new dependency is needed)",
+    "Real repository state: app/frontend/src/App.tsx (confirms current 5-route shape), app/frontend/src/lib/api-client.ts (confirms get/post only, no put - the plan's additive apiClient.put() claim verified accurate)",
+    "Real repository state: app/frontend/src/components/auth/require-auth.tsx (confirms unmodified reuse is correct), app/frontend/src/components/ (confirms flat auth/ + common/ structure the plan's new ingredients-suppliers/ sibling folder follows)",
+    "app/README.md and .github/workflows/ci.yml (confirms all verification commands in §10 exist and are not invented)",
+    "Directory listing of app/backend and app/frontend/src (confirms file-scope claims and that no in-flight edit overlaps the plan's CREATE/MODIFY list)"
+  ]
+}

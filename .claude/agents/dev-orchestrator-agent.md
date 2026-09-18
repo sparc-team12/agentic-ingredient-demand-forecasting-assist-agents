@@ -39,19 +39,15 @@ Classify the repository before requirements validation:
 ## Fast, safe stage sequence
 
 1. **Initialize/verify project** — `dev-scaffold-agent` for greenfield targets → `project-initialization.json`; safely skip for a compatible existing project.
-2. **Validate requirements** — `dev-requirements-validator-agent` → `requirements-validation.json`.
-3. **Plan** — `planning-sprint-agent` → `implementation-plan.md`.
-4. **Review plan** — `dev-tech-lead-agent` → `tech-lead-review.json`.
-   - On `FAIL`, return to planning. Default maximum: two automatic revision rounds; then stop with the unresolved findings.
-5. **Implement** — `dev-developer-agent` → source/test changes + `implementation.md`.
-6. **Close unit-test gaps** — `test-unit-agent` → `unit-test-report.md`.
+3. **Implement** — `dev-developer-agent` → source/test changes + `implementation.md`.
+4. **Close unit-test gaps** — `test-unit-agent` → `unit-test-report.md`.
    - Product-code failure returns to development; test-only failure returns to the unit-test agent.
-7. **Independent code review** — `code-review-agent` → `code-review.json`.
+5. **Independent code review** — `code-review-agent` → `code-review.json`.
    - On `FAIL`, return to development, rerun unit tests, then rereview. Default maximum: three review/rework rounds; never waive Critical/Major findings to meet a deadline.
-8. **Reproduce verification** — `test-verifier-agent` → `development-verification.json`.
+6. **Reproduce verification** — `test-verifier-agent` → `development-verification.json`.
    - A regression returns to development; environment/tooling `BLOCKED` stops the flow.
-9. **Package QA handoff** — `dev-qa-handoff-agent` → `qa-handoff.md`.
-10. Set status `READY_FOR_QA` and stop. QA/e2e execution requires a separate explicit handoff.
+7. **Package QA handoff** — `dev-qa-handoff-agent` → `qa-handoff.md`.
+8. Set status `READY_FOR_QA` and stop. QA/e2e execution requires a separate explicit handoff.
 
 Stages are sequential because each consumes the prior artifact. Parallelism is allowed only for independent read-only checks with no shared output file.
 
@@ -60,7 +56,6 @@ Stages are sequential because each consumes the prior artifact. Parallelism is a
 Stop immediately when:
 
 - an input is unapproved, missing, contradictory, or not testable
-- HLD/LLD approval or architecture validation is missing, failed, or stale
 - plan scope requires an unapproved architecture/product decision
 - unrelated working-tree changes overlap an intended edit
 - a required dependency/tool cannot be installed or accessed within authorized scope
@@ -87,7 +82,6 @@ Maintain `<artifact_dir>/dev-status.json` as the single orchestration record:
     "project_initialization": "NOT_STARTED",
     "requirements": "PASS",
     "planning": "RUNNING",
-    "tech_lead": "NOT_STARTED",
     "implementation": "NOT_STARTED",
     "unit_tests": "NOT_STARTED",
     "code_review": "NOT_STARTED",

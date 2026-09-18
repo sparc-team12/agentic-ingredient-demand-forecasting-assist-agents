@@ -1,0 +1,26 @@
+# Scaffold-only backend dependencies. Pinned per DEC-005 resolved stack
+# (FastAPI, SQLAlchemy/SQLite, passlib for future auth). No business
+# dependencies added here.
+#
+# Versions bumped from initially-drafted pins because this environment runs
+# Python 3.14 and the originally-drafted pydantic-core pin has no prebuilt
+# wheel and fails to build from source here (pyo3 0.22.2 does not support
+# Python 3.14). These versions were verified to install cleanly against
+# Python 3.14 in this environment.
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+sqlalchemy==2.0.54
+pydantic==2.13.5
+pydantic-settings==2.15.0
+passlib[bcrypt]==1.7.4
+# Explicit pin (ACRI-66, not a new dependency — bcrypt is already pulled in
+# transitively by passlib[bcrypt] above): passlib 1.7.4's own bcrypt
+# backend self-test crashes under bcrypt>=4.1 (bcrypt 4.1 removed the
+# `__about__` attribute passlib probes for backend detection, and raises a
+# strict `ValueError` instead of the historical silent-truncation behavior
+# passlib's self-test relies on to probe for the OpenBSD wraparound bug).
+# bcrypt==4.0.1 is the newest release that remains compatible with
+# passlib==1.7.4; verified working in this environment (Python 3.14).
+bcrypt==4.0.1
+python-multipart==0.0.32
+python-dotenv==1.2.3

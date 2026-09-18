@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "work_item_id": "ACRI-61",
+  "status": "PASS",
+  "confidence": 0.85,
+  "sources": [
+    "Jira ACRI-61 (Story-Id US-026, epic ACRI-35 '[Data Setup] Data Setup') - requirement source, per DEC-004 override (PRD not used as requirements source for this build)",
+    "workflow/decisions.md#DEC-004 - PRD superseded by Jira user stories as requirements source for this build",
+    "workflow/decisions.md#DEC-005 - explicit human bypass of the HLD/LLD/architecture-validation development gate for every ACRI story; approved Confluence 'Technology Stack' and 'Design Document' pages stand in for HLD/LLD system-boundary/UI detail",
+    "Confluence 'Technology Stack' page (id 5885657157, Status: Approved) - React/Vite/TS frontend, FastAPI/SQLAlchemy/SQLite backend",
+    "Confluence 'Design Document - Agentic Ingredient Demand Forecasting Assistant' (id 5885722653, Status: Approved) - UI-007 'Ingredients & Suppliers Setup': two linked sections (supplier list w/ lead time; ingredient master w/ unit, unit cost, perishable flag, shelf life, supplier mapping via picker), manual-entry-by-default suppliers, bulk-upload+manual for ingredients, accessibility (real form controls, checkbox for perishable flag), loading/empty/error states, responsive desktop/tablet only; reached from UI-005 Data Setup hub (ACRI-59, not yet built, order-006)",
+    "artifacts/development/acri-66/ (requirements-validation.json, implementation-plan.md, implementation.md, qa-handoff.md, dev-status.json) - ACRI-66 is READY_FOR_QA; its auth infrastructure (session-cookie middleware, get_current_user dependency, RequireAuth route guard, AuthProvider) is confirmed real and reusable for this story",
+    "Direct repository inspection (this session) of app/backend/main.py, app/backend/db/models.py, app/backend/routes/screens.py, app/backend/middleware/auth.py, app/backend/schemas/auth.py - confirms current backend state: only auth (users/user_sessions/login_attempts) and 4 stub screen routes exist; no ingredients/suppliers models, routes, or schemas exist yet",
+    "Direct repository inspection (this session) of app/frontend/src/App.tsx, lib/screens.ts, components/common/stub-screen.tsx - confirms current frontend state: only the 4 gated stub routes + login exist; no Ingredients & Suppliers Setup route/component exists yet; RequireAuth/AuthProvider pattern is directly reusable for a new gated screen",
+    "config/project.yaml - development.require_approved_hld/require_approved_lld/require_architecture_validation still read true, a known unreconciled gap with DEC-005 already flagged in ACRI-66's evidence chain, not newly discovered here",
+    "Repository search (this session) for existing ingredient/supplier dataset files (csv/json/fixtures) - none found; no real 30-40 ingredient / 3-5 supplier dataset exists anywhere in the repo yet"
+  ],
+  "blocking_issues": [],
+  "warnings": [
+    "HLD/LLD/architecture-validation gate is explicitly bypassed per DEC-005 (repository-wide, not story-specific). No LLD-level detail (exact API contracts, ingredients/suppliers table schema fields, error taxonomy, module/file map, test seams) pre-exists for this feature; per the same treatment already applied to ACRI-66, this detail must be produced during planning/tech-lead review, not assumed to pre-exist or treated as a blocker here.",
+    "The Confluence Design Document's UI-007 spec mentions bulk-upload for ingredients, but ACRI-61's own acceptance criteria only describe 'given a supplied dataset ... when loaded ... then viewable' - satisfiable by a manual-entry-capable screen without a working bulk-upload parser. Per task-prompt guidance this is a planning-stage judgment call (bulk upload as required vs. stretch enhancement), not an automatic blocker; forwarded as a question below.",
+    "Whether this new Ingredients & Suppliers Setup screen must sit behind the existing per-user auth gate (RequireAuth/get_current_user, established in ACRI-66) is not stated anywhere in ACRI-61's acceptance criteria. The existing convention (all 4 built screens are gated) and ACRI-66's 'before reaching any screen' framing suggest yes, but this is a planning decision to make explicitly and record, not to silently copy or silently omit.",
+    "AC4 allows the safety-margin value to be captured 'per ingredient or per supplier' without specifying which level (or whether both are supported, and with what precedence if an ingredient's own value and its mapped supplier's value both exist). This is a genuine data-model choice with schema-rework risk if decided incorrectly at implementation time rather than at planning time.",
+    "No actual ingredient/supplier dataset content exists anywhere in this repository (verified by search) - the 30-40 ingredients and 3-5 suppliers referenced by AC1/AC2 have no source file. This is a POC test-fixture/demo-data question analogous to ACRI-66's credential-seeding resolution: planning should decide whether representative seed/demo data is authored, whether the manual-entry UI itself is the only 'loading' mechanism, or both - not an automatic blocker, since the acceptance criteria describe a capability, not specific data content.",
+    "UI-005 (Data Setup hub) that would normally link to this screen is not yet built (ACRI-59, order-006, later in build sequence). Per Jira, ACRI-61 has Depends-On: none and Build-Order: 1, so this screen is expected to be reachable via a standalone route for now; the eventual hub-linked navigation is out of this story's scope but should not be mistaken for a missing requirement.",
+    "config/project.yaml's development.require_approved_hld / require_approved_lld / require_architecture_validation flags still read true, unreconciled with DEC-005's repository-wide bypass. This is the same known, already-disclosed gap carried in ACRI-66's evidence chain, not a new discrepancy introduced by this story.",
+    "The gap-flagging UX for AC3 (no mapped supplier) and AC5 (no safety-margin value) has no pixel-level spec beyond the Design Document's general 'error state / proposed row-level validation summary' description; exact visual treatment (icon, banner, row highlight, copy) is left to planning/implementation, consistent with how ACRI-66 left its login-screen visual design to be authored fresh."
+  ],
+  "questions": [
+    "Should the safety-margin value be captured strictly per-ingredient, strictly per-supplier, or should the screen support entry at either level with a defined precedence when both are present for the same ingredient?",
+    "Is bulk-upload parsing (CSV/spreadsheet ingestion) a hard requirement for this story's 'load' behavior (AC1/AC2), or is a manual-entry-capable form sufficient for this story with bulk upload deferred as a stretch/future enhancement (per the Design Document's mention vs. ACRI-61's own out-of-scope list not mentioning it)?",
+    "Should the new Ingredients & Suppliers Setup screen require authentication via the existing RequireAuth/get_current_user gate, consistent with the 4 already-built screens, or is it intentionally reachable without login at this build stage?",
+    "What is the intended source of the actual ~30-40 ingredient / 3-5 supplier dataset content - will development author representative seed/demo data (mirroring ACRI-66's seeded demo accounts), will a real dataset be supplied separately, or is entry purely through the manual UI with no pre-seeded data?"
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "ACRI-61-AC1",
+      "source": "Jira ACRI-61 AC1",
+      "criterion": "Given a supplied dataset of 30-40 ingredients, when loaded, then unit, unit cost, perishable flag, and shelf life (where perishable) are viewable per ingredient.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-61-AC2",
+      "source": "Jira ACRI-61 AC2",
+      "criterion": "Given a supplied dataset of 3-5 suppliers with lead times, when loaded, then each supplier's lead time and each ingredient's mapped supplier are shown.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-61-AC3",
+      "source": "Jira ACRI-61 AC3",
+      "criterion": "Given an ingredient with no mapped supplier, when viewed, then the gap is visibly flagged.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-61-AC4",
+      "source": "Jira ACRI-61 AC4",
+      "criterion": "Given each ingredient or its mapped supplier, when the screen is used to load data, then a safety-margin value (in days) is captured per ingredient or per supplier and is viewable, for use by the order-by-date computation.",
+      "testable": true
+    },
+    {
+      "id": "ACRI-61-AC5",
+      "source": "Jira ACRI-61 AC5",
+      "criterion": "Given an ingredient/supplier with no safety-margin value supplied, when the screen is viewed, then that gap is visibly flagged rather than silently defaulting to zero.",
+      "testable": true
+    }
+  ]
+}
