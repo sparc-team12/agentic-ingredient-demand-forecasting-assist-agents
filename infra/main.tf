@@ -306,11 +306,11 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "app" {
   name_prefix = "${var.app_name}-sg-" # not a fixed `name` - AWS appends a random unique suffix, which is what actually lets create_before_destroy (below) work: a fixed name would collide with the still-existing old SG when Terraform tries to create the replacement first
-  description = "Application instance - inbound HTTP (frontend) and backend API port; outbound HTTPS only (Gemini API)"
+  description = "Application instance - inbound HTTP (frontend) and backend API port, outbound HTTPS only (Gemini API)"
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description = "SSH administration - required for deploy.yml's SSH-based deploy; was entirely missing before, causing every deploy attempt to time out"
+    description = "SSH administration - required by deploy.yml for SSH-based deploy, was entirely missing before, causing every deploy attempt to time out"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -472,6 +472,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [aws_security_group.app.id]
   iam_instance_profile        = aws_iam_instance_profile.app.name
   associate_public_ip_address = false # a dedicated Elastic IP is associated below instead
+  disable_api_termination     = true  # prevents accidental termination (console click or API call) - an instance was terminated by accident, cause unknown; must be explicitly disabled (console or `aws ec2 modify-instance-attribute --no-disable-api-termination`) before this instance can be terminated again, including by `terraform destroy`
   user_data                   = var.app_user_data
 
   metadata_options {

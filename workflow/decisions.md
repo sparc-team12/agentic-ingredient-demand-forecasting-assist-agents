@@ -398,6 +398,26 @@ New resources requiring additional IAM permissions beyond what `infra/iam-policy
 Related:
 infra/main.tf (aws_kms_key.logs, aws_cloudwatch_log_group.vpc_flow_logs, aws_iam_role.vpc_flow_logs, aws_flow_log.vpc), DEC-014
 
+## DEC-021 — Suppress CKV_AWS_24 (SSH open to 0.0.0.0/0) as an accepted v1 risk, not fixed for real
+
+Decision:
+Added `CKV_AWS_24` to `.github/workflows/terraform.yml`'s Checkov `skip_check` list, with a comment stating this is an accepted risk. The underlying exposure (port 22 open to the entire internet on `aws_security_group.app`) is not fixed — this only stops the CI lint job from failing on it.
+
+Decided by:
+sparc.team12@experionglobal.com, directly in conversation on 2026-09-18 — presented three options (suppress-and-document, restrict to a fixed CIDR, replace SSH with AWS SSM Session Manager) and asked to "fic this lint error without issues"; interpreted as picking the suppress-and-document option (the one recommended as fastest given no fixed-IP infrastructure exists yet).
+
+Reason:
+GitHub-hosted runners (which `deploy.yml` runs on) have no fixed egress IP, so restricting the security group to a specific CIDR isn't possible without first adding a self-hosted runner, bastion host, or VPN — none of which exist in this project. The properly-correct fix (AWS SSM Session Manager instead of direct SSH, eliminating the open port entirely) is a larger rework of `deploy.yml`'s connection mechanism, out of scope for unblocking this specific lint failure.
+
+Alternatives considered:
+Restricting to a fixed CIDR was rejected — no stable IP exists to restrict to given the current GitHub-hosted-runner setup. Replacing SSH with SSM Session Manager was named as the durable fix but not implemented now, given the scope of rewiring `deploy.yml` that would require.
+
+Impact:
+Port 22 remains open to the entire internet on the production instance's security group. This is a real, live exposure, not a cosmetic lint issue — it should be revisited (SSM Session Manager migration) before this is treated as production-hardened, not left as a permanent accepted state.
+
+Related:
+.github/workflows/terraform.yml, infra/main.tf (aws_security_group.app SSH ingress), DEC-017 (egress scoping — different rule, same resource)
+
 ## DEC-017 — Scope security-group egress to HTTPS (443) only, resolving the CKV_AWS_382 finding and security-architecture.md's egress-scoping TBD
 
 Decision:
