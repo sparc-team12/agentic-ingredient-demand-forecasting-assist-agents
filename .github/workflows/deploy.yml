@@ -68,10 +68,26 @@ jobs:
 
             # ---- Backend (FastAPI, app/backend) ----
             cd "$APP_DIR/backend"
-            python3 -m venv .venv --upgrade-deps 2>/dev/null || python3 -m venv .venv
-            source .venv/bin/activate
-            pip install -r requirements.txt # runtime deps only - NOT requirements-dev.txt (lint/test/mypy tooling, not needed to run the app)
-            deactivate
+
+            # Ubuntu's base python3 doesn't always include ensurepip/venv - the
+            # previous version of this script silently swallowed that exact error
+            # with `2>/dev/null || ...` and masked it instead of fixing it.
+            if ! python3 -c 'import ensurepip' >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y python3-venv
+            fi
+
+            # Remove an incomplete venv left by a previous failed deployment.
+            if [ -d .venv ] && [ ! -x .venv/bin/python ]; then
+              rm -rf .venv
+            fi
+
+            if [ ! -d .venv ]; then
+              python3 -m venv .venv
+            fi
+
+            .venv/bin/python -m pip install --upgrade pip
+            .venv/bin/python -m pip install -r requirements.txt # runtime deps only - NOT requirements-dev.txt (lint/test/mypy tooling, not needed to run the app)
 
             if [ ! -f .env ]; then
               echo "WARNING: app/backend/.env does not exist - copying .env.example as a placeholder."
