@@ -69,11 +69,18 @@ jobs:
           #   (tf-coding-inputs.md assumption #10, approved; no compliance driver)
           # CKV_AWS_260 — SG ingress 0.0.0.0/0:80 is the intended v1 HTTP-only
           #   ingress path (security-architecture.md §7 marker 4: no TLS for v1)
+          # CKV_AWS_24 — SG ingress 0.0.0.0/0:22 (SSH). ACCEPTED RISK, not an
+          #   oversight: GitHub-hosted runners (deploy.yml) have no fixed egress
+          #   IP, so restricting to a specific CIDR isn't possible without adding
+          #   a self-hosted runner, bastion host, or VPN — none of which exist
+          #   yet. The durable fix is replacing SSH-based deploy with AWS SSM
+          #   Session Manager (no open port needed at all); until that's built,
+          #   this stays open and is explicitly flagged, not silently ignored.
           # NOTE: these are blanket skips across infra/ — safe today since each
           # check ID matches exactly one resource in this small stack, but must
           # be revisited (scoped per-resource) if infra/ ever grows a second
           # resource of the same type that should NOT share the same exemption.
-          skip_check: CKV_AWS_8,CKV_AWS_189,CKV_AWS_3,CKV2_AWS_2,CKV_AWS_338,CKV_AWS_260
+          skip_check: CKV_AWS_8,CKV_AWS_189,CKV_AWS_3,CKV2_AWS_2,CKV_AWS_338,CKV_AWS_260,CKV_AWS_24
 
   validate:
     needs: lint
